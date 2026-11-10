@@ -22,11 +22,14 @@ Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc 
 
 **Cách chạy UI:**
 
-> Lệnh chạy UI (ví dụ `streamlit run app.py`) và dependency đã thêm vào `starter_v0/requirements.txt`.
+Từ `starter_v0/`: `streamlit run app.py` (dependency: `streamlit>=1.40.0`).
+Smoke test bằng Streamlit `AppTest` trên `main` đã xác nhận app render được khi thiếu key, ô chat bị khóa và Telegram credentials không còn trong tiến trình.
+
+Playwright smoke ngày 10/11/2026 kiểm tra thêm trạng thái thiếu key ở desktop/mobile và một lượt chat OpenRouter một câu hỏi không cần tool; ảnh và phạm vi kiểm tra ở [ui_playwright_smoke_2026-11-10.md](evidence/ui_playwright_smoke_2026-11-10.md).
 
 **Link dùng thử (deploy):**
 
-> Dán link public để team khác mở thử ngay. Cách deploy nhanh bằng Cloudflare Tunnel xem README. Nếu deploy Vercel/Streamlit Cloud thì dán link đó.
+Chưa có link public; đã có browser smoke cục bộ, chưa phải UAT đầy đủ hoặc deploy.
 >
 > URL:
 
@@ -37,6 +40,7 @@ Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc 
 | Tên tool | Làm được gì | Tool mới nhóm thêm? |
 |---|---|---|
 | clarify | hỏi lại người dùng khi thiếu thông tin | không |
+| deduplicate_sources | loại nguồn trùng URL, giữ item đầu tiên và thứ tự ban đầu | có |
 | source_audit | kiểm tra title và URL HTTP(S) trong danh sách nguồn trước khi trình bày digest | có |
 |  |  |  |
 |  |  |  |
@@ -54,6 +58,7 @@ Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc 
 > Tóm tắt các thay đổi chính trong `starter_v0/artifacts/system_prompt.md` và `starter_v0/artifacts/tools.yaml`, và tool mới nhóm viết (tên, làm gì, khi nào agent nên gọi).
 
 - Thêm `source_audit` (`starter_v0/tools/source_audit/`): kiểm tra title và URL HTTP(S) cho từng citation, trả danh sách lỗi theo index; tool không tải URL và không xác minh claim.
+- Thêm `deduplicate_sources` (`starter_v0/tools/deduplicate_sources/`): gộp URL trùng, chuẩn hóa slash cuối, giữ item đầu tiên và thứ tự ban đầu.
 
 ## 4. Kết quả — PHẦN B: Chi tiết và bằng chứng
 
@@ -68,11 +73,13 @@ Lấy từ `starter_v0/artifacts/version_log.csv` và `starter_v0/runs/*.json`. 
 | v2 | `artifacts/system_prompt.md` | Quy tắc `clarify` rõ hơn sẽ giảm `missing_info` | 0.70 | 0.80 | `starter_v0/runs/v2_B_base_gemini_20261110T185133380730.json` |
 | v3 | `artifacts/system_prompt.md` | Quy tắc args và boundary rõ hơn sẽ cải thiện kết quả | 0.80 | 0.80 | `starter_v0/runs/v3_B_base_gemini_20261110T215643805698.json` |
 
-> Run v3 hợp lệ là `v3_B_base_gemini_20261110T215643805698.json`,
+> PR #3 ghi nhận v3 là `v3_B_base_gemini_20261110T215643805698.json`,
 > với `total_cases=20`, `measured_cases=20`, `provider_error_cases=0`.
 > Các run v3 trước đó không được tính do provider errors từ Gemini:
 > `185620920233`, `193757883769`, `194616666952`, `195746525886`,
 > `200311115832`, `214921174144`.
+>
+> **Thiếu file bằng chứng:** các đường dẫn run v0–v3 trong bảng hiện không có trong `main` (`starter_v0/runs/` chưa được commit). Vì vậy các metric và trạng thái hợp lệ ở trên chưa thể đối soát từ JSON; cần bổ sung run files trước khi tính là bằng chứng nộp bài.
 
 ### B2. Failure Analysis
 
@@ -102,9 +109,12 @@ Lấy từ `starter_v0/transcripts/*.transcript.json`.
 
 | Item | Evidence File | What Worked | Risk / Guardrail |
 |---|---|---|---|
+| Tool mới (`deduplicate_sources`) | `starter_v0/tools/deduplicate_sources/tool.py`, `TOOL.md`; đăng ký trong registry và `tools.yaml` | 4 test: URL trùng, slash cuối, item thiếu URL, input sai kiểu | Chuẩn hóa URL để deduplicate, không xác minh nguồn hoặc nội dung |
 | Tool mới (`tools/<tên>/`) | `starter_v0/tools/source_audit/tool.py`, `TOOL.md`; đăng ký tại `starter_v0/tools/__init__.py` và `starter_v0/artifacts/tools.yaml` | 4 test xác nhận citation HTTP hợp lệ, thiếu title/URL FTP và cổng URL sai bị báo lỗi, input `items` sai kiểu trả error dict | Chỉ kiểm tra metadata/cú pháp URL; không xác nhận URL truy cập được hay claim chính xác |
-| Unit test tool mới (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py` — `source_audit`: 4 passed; `starter_v0/tests/test_tool_contract.py`: 60 passed | Bắt được title thiếu, scheme FTP và cổng URL sai, là lỗi dữ liệu citation ở tầng tool | Đây là unit/contract tests, chưa chứng minh model tự route đúng tới tool |
-| UI (lệnh chạy + link dùng thử) |  |  |  |
+| Unit test tool mới (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py`, `starter_v0/tests/test_rank_sources.py`, `starter_v0/tests/test_tool_contract.py` | 4 `source_audit`, 4 `deduplicate_sources`, 3 `rank_sources`, 65 contract test đạt; toàn suite `83 passed, 14 skipped` | 14 skip là TODO stub có sẵn; chưa chứng minh model tự route đúng tới mọi tool |
+| UI (lệnh chạy + link dùng thử) | `starter_v0/app.py`; dependency trong `starter_v0/requirements.txt`; [bằng chứng Playwright](evidence/ui_playwright_smoke_2026-11-10.md) | `AppTest`; Playwright desktop 1365×900 và mobile 390×844 khi thiếu key; với key, một câu hỏi không cần tool trả lời `2 + 2 bằng 4`; console 0 lỗi | Chưa có browser UAT đầy đủ hoặc deploy link; chỉ thử một lượt không dùng tool; UI chưa có auth/rate limit, không mở public trước khi kiểm soát lượt gọi/provider spend |
+
+`rank_sources` có implementation và 3 test trên main; registry/schema sẽ được hoàn tất trong PR #1 theo kế hoạch tích hợp cuối.
 
 Tool unit tests: số test đã viết, và một ví dụ lỗi mà unit test bắt được nhưng eval không bắt được.
 
@@ -130,26 +140,32 @@ Chỉ điền nếu nhóm làm bonus này.
 | Version | Model (provider) | Prompt/Tools | case_accuracy | tool_routing | argument | multiturn | Run File |
 |---|---|---|---|---|---|---|---|
 | v3 | (cloud) | v3 |  |  |  |  |  |
-| v3-<model> | (ollama) | v3 |  |  |  |  |  |
-| v3-<model> | (ollama) | v3 |  |  |  |  |  |
-| v4-local |  |  |  |  |  |  |  |
-| v5-local |  |  |  |  |  |  |  |
+| v3-qwen2.5-3b | `qwen2.5:3b` (Ollama, 100% GPU) | v3 | 0.35 | 0.60 | 0.35 | 0.50 | [run JSON](../../starter_v0/runs/v3-qwen2.5-3b_B_base_ollama_20261111T000647728345.json) |
+| v3-llama3.2-3b | `llama3.2:3b` (Ollama, 100% GPU) | v3 | 0.25 | 0.45 | 0.25 | 0.1667 | [run JSON](../../starter_v0/runs/v3-llama3.2-3b_B_base_ollama_20261111T001334521498.json) |
+| v4-local-qwen2.5-3b | `qwen2.5:3b` (Ollama, 100% GPU) | ordered routing map | 0.65 | 0.75 | 0.65 | 0.6667 | [run JSON](../../starter_v0/runs/v4-local-qwen2.5-3b_B_base_ollama_20261111T005614499549.json) |
+| v5-local-qwen2.5-3b | `qwen2.5:3b` (Ollama, 100% GPU) | clarify/args/boundary examples | 0.65 | 0.65 | 0.65 | 0.3333 | [run JSON](../../starter_v0/runs/v5-local-qwen2.5-3b_B_base_ollama_20261111T005631827068.json) |
+| v5-local (cloud check) | OpenRouter | v5-local | pending | pending | pending | pending | not run |
 
-Bằng chứng setup local (chưa phải benchmark): preflight của repo với alias CPU `qwen2.5:3b-cpu` đã trả về tool call `social_search`; `ollama ps` xác nhận `100% CPU`. Chi tiết lệnh và kết quả: [local_cpu_preflight_2026-11-10.md](evidence/local_cpu_preflight_2026-11-10.md). Lỗi CUDA của lần preflight GPU trước vẫn được ghi nhận riêng, nhưng hiện đã có đường chạy CPU.
+Bằng chứng setup: sau khi giải phóng RAM, preflight GPU thành công cho cả hai model; chi tiết lỗi trước đó và các lần preflight xem [local_model_setup_2026-11-10.md](evidence/local_model_setup_2026-11-10.md). Hai baseline dùng đủ 20 case phase B, prompt hash `ba78cd0306b2`, tools hash `1ded0d564101`, provider errors 0; kết quả và giới hạn offline được ghi ở [local_model_baseline_2026-11-11.md](evidence/local_model_baseline_2026-11-11.md). Hai vòng tối ưu và giả thuyết được ghi ở [local_prompt_iterations_2026-11-11.md](evidence/local_prompt_iterations_2026-11-11.md). Không có kết quả tool API bên ngoài nào được tính vào metric.
 
-B7 chưa có baseline local hợp lệ hoặc các vòng `v4-local`/`v5-local`: nhánh này vẫn đang ở prompt v0; PR của thành viên phụ trách prompt có run v3 nhưng gặp 1 provider error ở R09 (503), nên chưa đủ điều kiện làm bản đối chiếu. Model thứ hai hiện có là `llama3.2:1b`, nằm ngoài khoảng 3B–8B nêu trong hướng dẫn. Preflight CPU chỉ chứng minh provider nhận tool call, không được tính là eval. Cần có run v3 hợp lệ, hai model phù hợp và run JSON đầy đủ trước khi điền điểm.
+B7 đã có baseline local cho hai model và hai vòng tối ưu `v4-local`/`v5-local` trên Qwen; còn thiếu kiểm tra ngược `v5-local` trên cloud. Run JSON cloud v0–v3 chưa được commit nên vẫn chưa đối soát được baseline cloud. Local metrics bên trên chấm routing/arguments trên 20 case; credentials cho tools bên ngoài đã bị gỡ hoặc các executor được stub, nên đây không phải bằng chứng tool API thật hoạt động.
 
 Lỗi đặc thù của model nhỏ (đếm từ run JSON):
 
-| Failure Pattern | Count | Example Case | Fix Tried | Helped? |
-|---|---|---|---|---|
-| wrong / hallucinated tool |  |  |  |  |
-| invalid JSON args (`_invalid_json_arguments`) |  |  |  |  |
-| no tool call / answered directly |  |  |  |  |
-| missed `clarify` |  |  |  |  |
-| repeated / unnecessary calls |  |  |  |  |
+| Failure Pattern | Qwen v3 | Llama v3 | Qwen v4 | Qwen v5 |
+|---|---:|---:|---:|---:|
+| wrong / hallucinated tool | 5 | 5 | 2 | 1 |
+| invalid JSON args (`_invalid_json_arguments`) | 0 | 0 | 0 | 0 |
+| missing expected tool call | 6 | 9 | 3 | 7 |
+| missed `clarify` | 3 | 3 | 2 | 2 |
+| wrong argument value/type | 4 | 5 | 1 | 3 |
+| out-of-scope tool use | 1 | 1 | 2 | 0 |
+| unnecessary extra call | 1 | 1 | 2 | 0 |
+| wrong confirmation boundary | 1 | 1 | 1 | 0 |
 
-- Cái gì giúp model nhỏ gọi tool đúng hơn nhất? Bằng chứng?
+- v4 đạt 0.65 case accuracy và 0.75 routing. v5 giữ case/argument accuracy ở 0.65, nhưng routing giảm còn 0.65 và multiturn giảm còn 0.3333; boundary/out-of-scope lỗi không xuất hiện trong run v5 này. Kết quả chưa chứng minh v5 tốt hơn v4.
+- Các run thử trước với cùng nội dung prompt nhưng khác whitespace cho điểm khác nhau; mới có một run canonical cho mỗi hash sạch, nên repeatability chưa được đo.
+- Cần chạy reverse-check `v5-local` trên cloud; hiện chưa ghi metric cloud.
 - Bản prompt tối ưu cho local chạy trên model cloud thì sao?
 - Khi nào nhóm sẽ chọn model local thay vì cloud cho agent này?
 
