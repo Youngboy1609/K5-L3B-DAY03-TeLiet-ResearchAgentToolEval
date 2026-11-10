@@ -2,13 +2,12 @@
 name: source_audit
 track: bonus
 kind: local_formatter
-provider: local
+provider: local Python
 requires_env: []
 inputs: [items]
-outputs: [ok, checked_count, valid_count, issues]
+outputs: [checked_count, valid_count, ok, issues]
 side_effect: false
-requires_confirmation: false
 ---
 # source_audit
 
-Kiểm tra tính hợp lệ về mặt kỹ thuật của danh sách nguồn tin (`items`): URL có đúng định dạng HTTP/HTTPS không và có thông tin metadata cơ bản không. Tool chỉ kiểm tra metadata, không xác minh nội dung là thật hay giả.
+Checks whether each research item has a non-empty title and an HTTP(S) URL with a host. Use it to check citation metadata before formatting a digest. It does not fetch URLs or verify that their claims are true. Items without a title or valid URL are returned in `issues` with their list index and problem codes.

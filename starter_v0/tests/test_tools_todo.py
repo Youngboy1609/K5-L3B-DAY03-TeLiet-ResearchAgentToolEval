@@ -262,3 +262,120 @@ def test_domain_filter_empty_inputs() -> None:
     res_empty_domains = filter_func(items=[{"url": "https://example.com"}], allowed_domains=[])
     assert res_empty_domains["matched_count"] == 0
     assert res_empty_domains["filtered_out_count"] == 1
+
+
+# ---------------- source_audit (Nghia) ----------------
+
+def test_source_audit_accepts_complete_http_citations() -> None:
+    audit_func = TOOL_FUNCTIONS["source_audit"]
+    result = audit_func(items=[{
+        "title": "Research report",
+        "url": "https://example.org/report",
+        "source": "Example",
+        "summary": "A short summary.",
+    }])
+
+    assert result == {
+        "tool": "source_audit",
+        "checked_count": 1,
+        "valid_count": 1,
+        "ok": True,
+        "issues": [],
+    }
+
+
+def test_source_audit_reports_missing_title_and_invalid_url() -> None:
+    audit_func = TOOL_FUNCTIONS["source_audit"]
+    result = audit_func(items=[
+        {"url": "https://example.org/no-title"},
+        {"title": "FTP source", "url": "ftp://example.org/report"},
+    ])
+
+    assert result["ok"] is False
+    assert result["checked_count"] == 2
+    assert result["valid_count"] == 0
+    assert result["issues"] == [
+        {"index": 0, "title": None, "problems": ["missing_title"]},
+        {"index": 1, "title": "FTP source", "problems": ["invalid_url"]},
+    ]
+
+
+def test_source_audit_wrong_items_type_returns_error_dict() -> None:
+    audit_func = TOOL_FUNCTIONS["source_audit"]
+    result = audit_func(items="not a list")
+
+    assert result == {
+        "tool": "source_audit",
+        "error": "TypeError",
+        "message": "items must be a list of objects",
+    }
+
+
+# ---------------- deduplicate_sources (Chuan) ----------------
+
+def test_deduplicate_sources_keeps_first_duplicate_and_order() -> None:
+    deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+    first = {"title": "First", "url": "https://example.com/a"}
+    duplicate = {"title": "Duplicate", "url": "https://example.com/a"}
+    second = {"title": "Second", "url": "https://example.com/b"}
+
+    result = deduplicate_tool(items=[first, duplicate, second])
+
+    assert result["items"] == [first, second]
+    assert result["removed_count"] == 1
+
+
+def test_deduplicate_sources_keeps_items_without_url() -> None:
+    deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+    no_url = {"title": "No URL"}
+    empty_url = {"title": "Empty URL", "url": ""}
+
+    result = deduplicate_tool(items=[no_url, empty_url])
+
+    assert result["items"] == [no_url, empty_url]
+    assert result["removed_count"] == 0
+
+
+def test_deduplicate_sources_invalid_items_returns_error_dict() -> None:
+    deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+    result = deduplicate_tool(items="not-a-list")
+
+    assert result["error"] == "TypeError"
+    assert "items must be a list" in result["message"]
+
+
+# ---------------- rank_sources (Quan) ----------------
+
+def test_rank_sources_more_matching_keywords_rank_first() -> None:
+    rank_func = TOOL_FUNCTIONS["rank_sources"]
+    items = [
+        {"title": "AI news", "summary": ""},
+        {"title": "New AI chip", "summary": "Chip for computers"},
+    ]
+
+    result = rank_func(items=items, query="AI chip", limit=5)
+
+    assert result["items"][0]["title"] == "New AI chip"
+    assert result["items"][1]["title"] == "AI news"
+    assert result["ranked_count"] == 2
+
+
+def test_rank_sources_limit_restricts_number_of_results() -> None:
+    rank_func = TOOL_FUNCTIONS["rank_sources"]
+    items = [
+        {"title": "AI chip"},
+        {"title": "AI model"},
+        {"title": "Other news"},
+    ]
+
+    result = rank_func(items=items, query="AI", limit=1)
+
+    assert len(result["items"]) == 1
+    assert result["ranked_count"] == 3
+
+
+def test_rank_sources_invalid_input_returns_error_dict() -> None:
+    rank_func = TOOL_FUNCTIONS["rank_sources"]
+    result = rank_func(items="not a list", query="AI", limit=5)
+
+    assert result["error"] == "invalid_input"

@@ -18,7 +18,7 @@ from .social_search.tool import search_tweets
 from .send.tool import send_telegram
 from .lookup.tool import web_search
 from .domain_filter.tool import filter_by_domain
-from .source_audit.tool import audit_sources
+from .source_audit.tool import source_audit
 from .deduplicate_sources.tool import deduplicate_sources
 from .rank_sources.tool import rank_sources
 
@@ -40,7 +40,7 @@ TOOL_FUNCTIONS = {
     "papers": arxiv_search,
     "paper_text": get_arxiv_paper_text,
     "domain_filter": filter_by_domain,
-    "source_audit": audit_sources,
+    "source_audit": source_audit,
     "deduplicate_sources": deduplicate_sources,
     "rank_sources": rank_sources,
     # TODO CP3 (student): register your new tool here, e.g. "my_tool": my_tool_function,

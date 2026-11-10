@@ -179,10 +179,6 @@ tools:
               url: {type: string}
               title: {type: string}
               summary: {type: string}
-        keep_no_url:
-          type: boolean
-          default: true
-          description: "Có giữ lại các item không có URL hay không"
       required: [items]
 
   - name: rank_sources

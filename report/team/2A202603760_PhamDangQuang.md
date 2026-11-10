@@ -34,16 +34,16 @@
    - Mở rộng thêm 8 test cases chuyên sâu kiểm thử toàn diện: khớp subdomain, chặn phishing, chuẩn hóa domain bẩn từ LLM, xử lý item/URL hỏng, giữ nguyên thứ tự kết quả, không phân biệt hoa thường, và kiểm tra kiểu dữ liệu đầu vào.
    - Toàn bộ các bài test đều vượt qua 100% (`PASSED`).
 
-3. **Thiết kế bộ 10 Eval Cases nhóm (`eval_group.json`):**
+3. **Thiết kế bộ 10 Eval Cases nhóm (`eval_group.json`) và chuẩn hóa Evaluator:**
    - Đúng quy cách: 5 câu đơn lượt (`query`) + 5 hội thoại đa lượt (`turns`).
    - Cung cấp đầy đủ dữ liệu mẫu `items` trong input và assert chặt chẽ `items` cùng các arguments đặc thù (`allowed_domains` cho `domain_filter`; `query` và `limit` cho `rank_sources`) trong `expect.tool_calls[*].args`.
    - Case G08 được bổ sung danh sách nguồn tin mẫu vào các lượt hội thoại để kiểm tra `source_audit` kèm assertion `items` chính xác.
-   - Đảm bảo có case kiểm tra định tuyến đến cả 4 tool mới tự viết của nhóm:
-     - `domain_filter` (Quang)
-     - `source_audit` (Nghĩa)
-     - `deduplicate_sources` (Chuẩn)
-     - `rank_sources` (Quân)
-   - Kiểm tra thêm các tình huống: câu hỏi ngoài phạm vi research (`out_of_scope`), chuyển đổi tool đa lượt, kế thừa ngữ cảnh & cập nhật tham số `limit`, và ranh giới bảo vệ không gửi khi user từ chối xác nhận (`wrong_boundary`).
+   - Nâng cấp `run_eval.py` (`compare_subset` và `normalize_value`): Giữ nguyên thứ tự tuần tự đối với danh sách `items` (vì thứ tự ảnh hưởng trực tiếp tới phần tử đầu tiên được giữ lại trong `deduplicate_sources` và tính ổn định khi `rank_sources`), chỉ sắp xếp (sort) với các trường tập hợp không phân biệt thứ tự (như `allowed_domains`). Đã bổ sung 2 unit tests kiểm tra trường hợp đảo thứ tự `items` bị từ chối chính xác.
+   - Thống nhất các implementation canonical của cả 4 tool mới theo đúng người phụ trách để chuẩn bị tích hợp (integration) sạch trước khi merge:
+     - `domain_filter`: Phạm Đăng Quang
+     - `source_audit`: Hồ Trọng Nghĩa (bản đầy đủ kiểm tra metadata title & URL + 3 unit tests)
+     - `deduplicate_sources`: Phạm Lê Chuẩn (bản chuẩn PR #3 + 3 unit tests)
+     - `rank_sources`: Nguyễn Minh Quân (bản chuẩn PR #2 + 3 unit tests)
    - Đã kiểm tra tương thích schema 100% với trình nạp `run_eval.py` và kiểm tra hợp đồng `test_tool_contract.py`.
 
 ---
@@ -56,16 +56,17 @@
 - **Các file bằng chứng trực tiếp:**
   - `starter_v0/tools/domain_filter/tool.py`
   - `starter_v0/tools/domain_filter/TOOL.md`
-  - `starter_v0/tests/test_tools_todo.py` (các bài test `domain_filter`)
+  - `starter_v0/tests/test_tools_todo.py` (các bài test `domain_filter` và bộ test của 4 custom tools)
   - `starter_v0/data/eval_group.json` (bộ 10 case hoàn chỉnh)
-  - `starter_v0/artifacts/tools.yaml` (khai báo tool `domain_filter`)
-  - `starter_v0/tools/__init__.py` (đăng ký `domain_filter` vào `TOOL_FUNCTIONS`)
+  - `starter_v0/artifacts/tools.yaml` (khai báo tool `domain_filter` và 3 tool canonical đồng bộ)
+  - `starter_v0/tools/__init__.py` (đăng ký 4 custom tools canonical vào `TOOL_FUNCTIONS`)
+  - `starter_v0/run_eval.py` (cơ chế so sánh giữ nguyên thứ tự `items`)
 
 ### 4.2. Công cụ AI và cách tự kiểm tra kết quả
-- **Công cụ AI đã sử dụng:** Google Antigravity Assistant (Gemini 3.8 Flash). Sử dụng để hỗ trợ thiết kế edge cases kiểm thử, sinh các trường hợp URL mạo danh và rà soát schema test case.
+- **Công cụ AI đã sử dụng:** Google Antigravity Assistant (Gemini 3.8 Flash). Sử dụng để hỗ trợ thiết kế edge cases kiểm thử, sinh các trường hợp URL mạo danh, chuẩn hóa evaluator và rà soát schema test case.
 - **Cách tự kiểm tra kết quả:**
-  - Chạy `pytest tests/test_tools_todo.py -k domain_filter -v`: **8 passed**, 17 deselected in 0.12s.
-  - Chạy `pytest tests/test_tool_contract.py -v`: **75/75 passed** in 0.62s.
+  - Chạy `pytest tests/test_tools_todo.py -v`: **20 passed**, 14 skipped (tất cả 4 custom tools đều đạt 100% tests).
+  - Chạy `pytest tests/test_tool_contract.py -v`: **77/77 passed** (bao gồm test bảo vệ thứ tự `items` và kiểm tra hợp đồng 4 tools).
   - Kiểm tra nạp và tự đối chiếu dataset: Chạy `run_eval.load_cases(Path('data/eval_group.json'), 'B')` và `compare_subset` thành công 10/10 case không lỗi schema hay kiểu dữ liệu.
 
 ### 4.3. Bằng chứng chạy Eval nhóm *(Điền sau khi chạy eval cloud)*

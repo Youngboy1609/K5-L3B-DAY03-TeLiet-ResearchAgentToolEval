@@ -5,10 +5,15 @@ kind: local_formatter
 provider: local
 requires_env: []
 inputs: [items, query, limit]
-outputs: [items, ranked_count, query_terms]
+outputs: [items, ranked_count]
 side_effect: false
-requires_confirmation: false
 ---
+
 # rank_sources
 
-Sắp xếp các item/nguồn tin theo mức độ trùng lặp từ khóa (`keyword overlap`) giữa câu truy vấn `query` với tiêu đề (`title`) và tóm tắt (`summary`). Đây là thuật toán heuristic từ vựng đơn giản, không phản ánh độ tin cậy hay tính xác thực của nội dung.
+Xếp hạng các nguồn đã thu thập theo số từ khóa của `query` xuất hiện trong
+`title` và `summary`. Hai nguồn bằng điểm giữ nguyên thứ tự ban đầu.
+Chỉ trả tối đa `limit` nguồn.
+
+Đây là heuristic khớp từ khóa, không xác minh sự thật hoặc đánh giá độ tin cậy
+của nguồn. Tool chạy cục bộ và không cần API key.
