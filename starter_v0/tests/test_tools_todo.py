@@ -17,6 +17,13 @@ from tools import TOOL_FUNCTIONS  # noqa: F401
 
 TODO = "TODO CP3 (student): implement this test"
 
+deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+
+
+def _source_audit_tool():
+    tool = TOOL_FUNCTIONS.get("source_audit")
+    assert callable(tool), "source_audit is not registered"
+    return tool
 
 # ---------------- clarify ----------------
 
@@ -110,12 +117,42 @@ def test_policy_instruction_like_lines_go_to_untrusted_text() -> None:
 #   2. bad / missing input from the model (empty string, wrong type, out-of-enum value)
 #   3. failure path (missing key, HTTP error, timeout) -> returns error dict, does not raise
 
-def _source_audit_tool():
-    tool = TOOL_FUNCTIONS.get("source_audit")
-    assert callable(tool), "source_audit is not registered"
-    return tool
+def test_deduplicate_sources_keeps_first_duplicate_and_order() -> None:
+    first = {"title": "First", "url": "https://example.com/a"}
+    duplicate = {"title": "Duplicate", "url": "https://example.com/a"}
+    second = {"title": "Second", "url": "https://example.com/b"}
+
+    result = deduplicate_tool(items=[first, duplicate, second])
+
+    assert result["items"] == [first, second]
+    assert result["removed_count"] == 1
 
 
+def test_deduplicate_sources_normalizes_trailing_slash() -> None:
+    canonical = {"title": "First", "url": "https://openai.com/blog/gpt-5"}
+    duplicate = {"title": "Duplicate", "url": "https://openai.com/blog/gpt-5/"}
+
+    result = deduplicate_tool(items=[canonical, duplicate])
+
+    assert result["items"] == [canonical]
+    assert result["removed_count"] == 1
+
+
+def test_deduplicate_sources_keeps_items_without_url() -> None:
+    no_url = {"title": "No URL"}
+    empty_url = {"title": "Empty URL", "url": ""}
+
+    result = deduplicate_tool(items=[no_url, empty_url])
+
+    assert result["items"] == [no_url, empty_url]
+    assert result["removed_count"] == 0
+
+
+def test_deduplicate_sources_invalid_items_returns_error_dict() -> None:
+    result = deduplicate_tool(items="not-a-list")
+
+    assert result["error"] == "TypeError"
+    assert "items must be a list" in result["message"]
 def test_source_audit_accepts_complete_http_citations() -> None:
     result = _source_audit_tool()(items=[{
         "title": "Research report",
