@@ -36,6 +36,8 @@
 
 3. **Thiết kế bộ 10 Eval Cases nhóm (`eval_group.json`):**
    - Đúng quy cách: 5 câu đơn lượt (`query`) + 5 hội thoại đa lượt (`turns`).
+   - Cung cấp đầy đủ dữ liệu mẫu `items` trong input và assert chặt chẽ `items` cùng các arguments đặc thù (`allowed_domains` cho `domain_filter`; `query` và `limit` cho `rank_sources`) trong `expect.tool_calls[*].args`.
+   - Case G08 được bổ sung danh sách nguồn tin mẫu vào các lượt hội thoại để kiểm tra `source_audit` kèm assertion `items` chính xác.
    - Đảm bảo có case kiểm tra định tuyến đến cả 4 tool mới tự viết của nhóm:
      - `domain_filter` (Quang)
      - `source_audit` (Nghĩa)
@@ -50,23 +52,21 @@
 
 ### 4.1. Mã nguồn, nhánh và commit
 - **Nhánh làm việc:** `2A202603760_PhamDangQuang`
-- **Mã commit kỹ thuật:** `f0a5b798653ddc3580271a7e55a8888b388cff26`
-- **Thông điệp commit:** `feat(quang): implement domain_filter tool, unit tests, and 10 group eval cases`
-- **Pull Request:** [GitHub PR Link](https://github.com/Youngboy1609/K5-L3B-DAY03-TeLiet-ResearchAgentToolEval/pull/new/2A202603760_PhamDangQuang)
+- **Pull Request:** [GitHub PR #1](https://github.com/Youngboy1609/K5-L3B-DAY03-TeLiet-ResearchAgentToolEval/pull/1)
 - **Các file bằng chứng trực tiếp:**
   - `starter_v0/tools/domain_filter/tool.py`
   - `starter_v0/tools/domain_filter/TOOL.md`
   - `starter_v0/tests/test_tools_todo.py` (các bài test `domain_filter`)
-  - `starter_v0/data/eval_group.json` (bộ 10 case)
+  - `starter_v0/data/eval_group.json` (bộ 10 case hoàn chỉnh)
   - `starter_v0/artifacts/tools.yaml` (khai báo tool `domain_filter`)
   - `starter_v0/tools/__init__.py` (đăng ký `domain_filter` vào `TOOL_FUNCTIONS`)
 
 ### 4.2. Công cụ AI và cách tự kiểm tra kết quả
 - **Công cụ AI đã sử dụng:** Google Antigravity Assistant (Gemini 3.8 Flash). Sử dụng để hỗ trợ thiết kế edge cases kiểm thử, sinh các trường hợp URL mạo danh và rà soát schema test case.
 - **Cách tự kiểm tra kết quả:**
-  - Chạy `pytest tests/test_tools_todo.py -v`: 100% các unit test của `domain_filter` đều `PASSED`.
-  - Chạy `pytest tests/test_tool_contract.py`: 75/75 tests hợp đồng đều `PASSED`.
-  - Kiểm tra nạp dataset: Chạy `run_eval.load_cases(Path('data/eval_group.json'), 'B')` xác nhận nạp đủ 10 case không lỗi schema.
+  - Chạy `pytest tests/test_tools_todo.py -k domain_filter -v`: **8 passed**, 17 deselected in 0.12s.
+  - Chạy `pytest tests/test_tool_contract.py -v`: **75/75 passed** in 0.62s.
+  - Kiểm tra nạp và tự đối chiếu dataset: Chạy `run_eval.load_cases(Path('data/eval_group.json'), 'B')` và `compare_subset` thành công 10/10 case không lỗi schema hay kiểu dữ liệu.
 
 ### 4.3. Bằng chứng chạy Eval nhóm *(Điền sau khi chạy eval cloud)*
 - **File run kết quả:** `starter_v0/runs/[DIEN_SAU_KHI_CHAY_EVAL]`

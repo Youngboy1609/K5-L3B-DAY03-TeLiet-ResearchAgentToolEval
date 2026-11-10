@@ -100,8 +100,14 @@ def case_messages(case: dict[str, Any]) -> list[dict[str, str]]:
 def normalize_value(value: Any) -> Any:
     if isinstance(value, str):
         return value.strip().lower()
+    if isinstance(value, dict):
+        return {k: normalize_value(v) for k, v in value.items()}
     if isinstance(value, list):
-        return sorted(normalize_value(item) for item in value)
+        normalized = [normalize_value(item) for item in value]
+        try:
+            return sorted(normalized)
+        except TypeError:
+            return sorted(normalized, key=lambda x: json.dumps(x, sort_keys=True) if isinstance(x, dict) else str(x))
     return value
 
 
