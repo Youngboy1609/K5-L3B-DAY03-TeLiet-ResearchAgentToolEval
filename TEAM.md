@@ -21,52 +21,10 @@
 
 ## Cá nhân
 
-### 1. HoTrongNghia-2A202603729
+Mỗi thành viên đồng thời tạo một báo cáo riêng trong `report/` theo dạng:
+`report/team/MSSV_HoTen.md`
 
-#### Phần việc phụ trách
-- Nhóm trưởng; tích hợp các tool mới vào registry và khai báo chung.
-- Tự xây dựng tool `source_audit` và viết ít nhất 3 unit tests.
-- Chạy bonus model local với preflight CPU và ghi nhận kết quả tại B7.
-
-#### Đóng góp cụ thể
-- Xây dựng tool local `source_audit` kiểm tra tính hợp lệ của metadata (title, URL scheme HTTP/HTTPS, kiểm tra cổng URL).
-- Viết 4 unit tests cho citation hợp lệ, thiếu metadata, scheme sai, cổng sai và input sai kiểu.
-- Thiết lập môi trường Ollama và chạy CPU preflight với `qwen2.5:3b-cpu` xác nhận nhận diện tool call thành công.
-
-#### Bằng chứng
-- `starter_v0/tools/source_audit/`
-- `starter_v0/tests/test_tools_todo.py`
-- `report/team/evidence/local_cpu_preflight_2026-11-10.md`
-- [2A202603729_HoTrongNghia.md](report/team/2A202603729_HoTrongNghia.md)
-
----
-
-### 2. PhamLeChuan-2A202603784
-
-#### Phần việc phụ trách
-- Tự làm tool `deduplicate_sources` và ít nhất 3 unit test.
-- Tối ưu `system_prompt.md` qua các phiên bản v1–v3.
-- Chạy eval cloud bằng Gemini (`gemini-2.5-flash-lite`) và ghi version log.
-
-#### Đóng góp cụ thể
-- Xây dựng hàm `deduplicate_sources` loại bỏ item trùng URL, chuẩn hóa trailing slash, giữ item đầu tiên và thứ tự ban đầu.
-- Xử lý item không có URL và input sai kiểu bằng error dict phù hợp.
-- Phân tích kết quả baseline v0 (0.65) và các vòng tối ưu v1 (0.70), v2 (0.80), v3 (0.80).
-
-#### Bằng chứng
-- `starter_v0/tools/deduplicate_sources/`
-- `starter_v0/tests/test_tools_todo.py`
-- `starter_v0/artifacts/system_prompt.md`
-- `starter_v0/artifacts/version_log.csv`
-- `starter_v0/runs/v0_B_base_gemini_20261110T183708553548.json`
-- `starter_v0/runs/v1_B_base_gemini_20261110T184719240561.json`
-- `starter_v0/runs/v2_B_base_gemini_20261110T185133380730.json`
-- `starter_v0/runs/v3_B_base_gemini_20261110T215643805698.json`
-- [2A202603784_PhamLeChuan.md](report/team/2A202603784_PhamLeChuan.md)
-
----
-
-### 3. PhamDangQuang-2A202603760
+### PhamDangQuang-2A202603760
 
 #### Phần việc phụ trách
 - Tự làm tool `domain_filter` và bộ unit test chuyên sâu (11 tests).
@@ -90,23 +48,3 @@
 - `starter_v0/data/eval_group.json`
 - `starter_v0/run_eval.py`
 - [2A202603760_PhamDangQuang.md](report/team/2A202603760_PhamDangQuang.md)
-
----
-
-### 4. NguyenMinhQuan-2A202603747
-
-#### Phần việc phụ trách
-- Tự làm tool `rank_sources` và ít nhất 3 unit tests.
-- Thiết kế giao diện người dùng bằng Streamlit (`starter_v0/app.py`).
-- Cấu hình chạy demo public an toàn và chuẩn bị Phần A báo cáo nhóm.
-
-#### Đóng góp cụ thể
-- Xây dựng tool `rank_sources` tính điểm trùng lặp từ khóa giữa query và `title` + `summary`, hỗ trợ giới hạn `limit`.
-- Viết 3 unit tests trong `starter_v0/tests/test_rank_sources.py` (và `test_tools_todo.py`).
-- Xây dựng `starter_v0/app.py` với giao diện Streamlit hiện đại, hiển thị `tool_events` đã gọi và tự động gỡ bỏ credential của `send` cho demo an toàn.
-
-#### Bằng chứng
-- `starter_v0/tools/rank_sources/`
-- `starter_v0/tests/test_rank_sources.py`
-- `starter_v0/app.py`
-- [2A202603747_NguyenMinhQuan.md](report/team/2A202603747_NguyenMinhQuan.md)

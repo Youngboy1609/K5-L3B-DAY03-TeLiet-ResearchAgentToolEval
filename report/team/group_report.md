@@ -145,21 +145,21 @@ Cấu trúc kịch bản hội thoại thực tế được lưu tại `starter_
 
 | Item | Evidence File | What Worked | Risk / Guardrail |
 |---|---|---|---|
-| Tool mới 1: `domain_filter` | `starter_v0/tools/domain_filter/` | Lọc đúng domain và subdomain; loại bỏ phishing; trả error dict khi sai kiểu | Không xác minh độ uy tín nội dung của web |
-| Tool mới 2: `source_audit` | `starter_v0/tools/source_audit/` | Kiểm tra title và URL HTTP(S); bắt cổng URL phi số; trả error dict | Chỉ kiểm tra cú pháp, không kiểm tra link sống/chết |
-| Tool mới 3: `deduplicate_sources` | `starter_v0/tools/deduplicate_sources/` | Khử trùng URL chính xác, chuẩn hóa trailing slash; giữ nguyên thứ tự | Không gộp các bài viết cùng nội dung nhưng khác URL |
-| Tool mới 4: `rank_sources` | `starter_v0/tools/rank_sources/` | Xếp hạng theo mức độ trùng lặp từ khóa; áp dụng giới hạn limit | Là heuristic từ khóa, không đánh giá ngữ nghĩa sâu |
-| Unit tests (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py`, `test_rank_sources.py` | 102 passed, 0 failed; bao phủ happy path, bad input, failure path | Unit test kiểm tra logic hàm, không đo routing của model |
-| UI | `starter_v0/app.py` | Chat Streamlit trực quan, hiển thị expander tool events; tự ẩn token | Không kích hoạt tool `send` trên giao diện demo public |
+| Tool mới (`tools/<tên>/`) | `starter_v0/tools/domain_filter/tool.py`, `TOOL.md`; đăng ký tại `starter_v0/tools/__init__.py` và `starter_v0/artifacts/tools.yaml` | Lọc đúng domain và subdomain hợp lệ; loại bỏ URL giả mạo/lừa đảo; trả error dict an toàn khi sai kiểu input | Không xác minh độ tin cậy hoặc nội dung của trang web |
+| Unit test tool mới (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py` — `domain_filter`: 11 passed; `starter_v0/tests/test_tool_contract.py`: 77 passed | Bắt được subdomain lồng nhau, domain bẩn từ LLM, và lỗi input sai kiểu mà không crash agent | Đây là unit/contract tests, chưa chứng minh model tự route đúng tới tool |
+| UI (lệnh chạy + link dùng thử) | `starter_v0/app.py` | Lệnh chạy: `streamlit run app.py`; giao diện chat trực quan với Streamlit, hiển thị expander tool events | Giao diện demo công khai tự động ẩn credential và không kích hoạt tool `send` |
 
-Tool unit tests: Tổng cộng 21 unit tests chuyên biệt cho 4 tool mới đã được tích hợp và vượt qua 100%. Ví dụ lỗi mà unit test bắt được nhưng eval không bắt được: trường hợp URL giả mạo tinh vi như `example.com.evil.org` hoặc cổng URL sai như `https://example.com:abc/` được unit test chặn đứng tại tầng logic của tool.
+Tool unit tests: Đã viết 11 unit tests chuyên biệt cho `domain_filter` trong `starter_v0/tests/test_tools_todo.py` (vượt qua 100%). Ví dụ lỗi mà unit test bắt được nhưng eval không bắt được: trường hợp URL giả mạo tinh vi như `example.com.evil.org` hoặc prefix spoofing `fake-example.com` được unit test chặn đứng tại tầng logic của tool.
+
+Eval routing: Đã thiết kế 10 case nhóm trong `starter_v0/data/eval_group.json`, trong đó có G01 và G06 kiểm tra routing tới `domain_filter` kèm assertion đầy đủ `items` và `allowed_domains`.
 
 ### B5. Bonus Evidence
 
+Chỉ điền nếu nhóm làm bonus (ghi riêng, tối đa 10 điểm). Tool có sẵn (`send`, `policy`, `papers`, `paper_text`) không tự được bonus.
+
 | Bonus | Evidence File | What Worked | Risk / Guardrail |
 |---|---|---|---|
-| Hơn 3 tool mới (≥ 4 tool do nhóm tự viết) | `starter_v0/tools/` (4 tools: `domain_filter`, `source_audit`, `deduplicate_sources`, `rank_sources`) | Cả 4 tool có đầy đủ `TOOL.md`, đăng ký trong `tools.yaml`, `tools/__init__.py`, ≥ 3 test/tool và có case route tới trong `eval_group.json` | Đạt điều kiện thưởng +3 điểm theo RUBRIC |
-| Small Local Model | `report/team/evidence/local_cpu_preflight_2026-11-10.md` | Preflight CPU `qwen2.5:3b-cpu` nhận diện tool call thành công | Đang ghi nhận bằng chứng preflight ban đầu |
+| Hơn 3 tool mới (≥ 4 tool do nhóm tự viết) | `starter_v0/tools/domain_filter/` (đóng góp công cụ thứ 4 cho nhóm đạt mốc ≥ 4 tool) | Đầy đủ `TOOL.md`, đăng ký trong `tools.yaml`, `tools/__init__.py`, 11 unit tests và case route tới trong `eval_group.json` | Đủ điều kiện nhận +3 điểm bonus theo RUBRIC |
 
 ### B7. Small Local Model Challenge (bonus)
 
@@ -179,11 +179,8 @@ Bằng chứng setup local (chưa phải benchmark): preflight của repo với 
 
 ## 6. Tổng hợp đóng góp
 
-Chi tiết đóng góp của từng thành viên nằm trong [TEAM.md](../../TEAM.md) và các báo cáo cá nhân:
-- [Hồ Trọng Nghĩa (Nhóm trưởng)](2A202603729_HoTrongNghia.md)
-- [Phạm Lê Chuẩn](2A202603784_PhamLeChuan.md)
-- [Phạm Đăng Quang](2A202603760_PhamDangQuang.md)
-- [Nguyễn Minh Quân](2A202603747_NguyenMinhQuan.md)
+Chi tiết đóng góp của thành viên:
+- [Phạm Đăng Quang (2A202603760)](2A202603760_PhamDangQuang.md)
 
 ## 7. Hạn chế và hướng cải thiện — B6. Reflection
 
