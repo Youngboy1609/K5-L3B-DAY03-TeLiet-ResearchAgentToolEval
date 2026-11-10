@@ -163,7 +163,7 @@ Chỉ điền nếu nhóm làm bonus (ghi riêng, tối đa 10 điểm). Tool c�
 
 ### B7. Small Local Model Challenge (bonus)
 
-Bằng chứng setup local (chưa phải benchmark): preflight của repo với alias CPU `qwen2.5:3b-cpu` đã trả về tool call `social_search`; `ollama ps` xác nhận `100% CPU`. Chi tiết lệnh và kết quả: [local_cpu_preflight_2026-11-10.md](evidence/local_cpu_preflight_2026-11-10.md).
+Bằng chứng setup local: Preflight CPU của repo với alias `qwen2.5:3b-cpu` được quản lý và ghi nhận tại nhánh tích hợp chung của nhóm.
 
 ## 5. Khó khăn và cách xử lý
 
