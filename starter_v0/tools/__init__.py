@@ -22,7 +22,6 @@ from .source_audit.tool import source_audit
 from .deduplicate_sources.tool import deduplicate_sources
 from .rank_sources.tool import rank_sources
 
-
 # NOTE (starter_v0): tool names here are intentionally vague. These keys are the
 # names the model sees AND the names data/eval_base.json + data/eval_research_extension.json
 # match against. If a team renames a tool, it MUST stay in sync across ALL of:
@@ -61,4 +60,3 @@ def to_openai_tools(declarations: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "parameters": item.get("parameters", {"type": "object", "properties": {}}),
         },
     } for item in declarations]
-

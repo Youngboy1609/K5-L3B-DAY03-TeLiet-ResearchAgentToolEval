@@ -148,36 +148,38 @@ tools:
       required: [items, allowed_domains]
 
   - name: source_audit
-    description: "Kiểm tra tính hợp lệ về mặt kỹ thuật của danh sách nguồn tin đã thu thập (URL hợp lệ HTTP/HTTPS và metadata nguồn). Khi nào dùng: khi người dùng yêu cầu kiểm tra link, kiểm toán hoặc audit các nguồn tin thu thập được xem có lỗi link hay thiếu URL không. Khi nào không dùng: khi muốn xác minh nội dung bài viết là sự thật hay giả mạo."
+    description: "Kiểm tra metadata trích dẫn của danh sách item: dùng trước khi trình bày digest để tìm item thiếu title hoặc URL HTTP(S) hợp lệ; không tải URL và không xác minh nội dung claim."
     parameters:
       type: object
       properties:
         items:
           type: array
           default: []
-          description: "Danh sách các bài viết / nguồn tin cần kiểm tra"
+          description: "Các item research cần kiểm tra; mỗi item có title và url, source/summary có thể đi kèm."
           items:
             type: object
             properties:
-              url: {type: string}
               title: {type: string}
+              url: {type: string}
               source: {type: string}
+              summary: {type: string}
       required: [items]
 
   - name: deduplicate_sources
-    description: "Loại bỏ các bài viết/nguồn tin bị trùng lặp URL trong danh sách items đã thu thập, giữ lại item đầu tiên. Khi nào dùng: khi kết quả tìm kiếm từ nhiều nguồn hoặc nhiều lượt có các bài viết bị trùng lặp URL và người dùng yêu cầu loại bỏ bài trùng. Khi nào không dùng: khi tìm kiếm bài viết mới từ đầu."
+    description: "Loại các item trùng URL khỏi danh sách nguồn. Giữ item xuất hiện đầu tiên và giữ nguyên thứ tự. Dùng sau khi đã thu thập nhiều nguồn; không dùng để tìm kiếm hoặc tải nội dung. Item không có URL được giữ nguyên."
     parameters:
       type: object
       properties:
         items:
           type: array
           default: []
-          description: "Danh sách các bài viết cần loại bỏ trùng lặp"
+          description: "Danh sách source items cần lọc"
           items:
             type: object
             properties:
-              url: {type: string}
               title: {type: string}
+              url: {type: string}
+              source: {type: string}
               summary: {type: string}
       required: [items]
 

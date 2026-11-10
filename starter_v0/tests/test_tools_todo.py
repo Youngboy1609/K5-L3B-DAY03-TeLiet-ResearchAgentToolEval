@@ -17,6 +17,13 @@ from tools import TOOL_FUNCTIONS  # noqa: F401
 
 TODO = "TODO CP3 (student): implement this test"
 
+deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+
+
+def _source_audit_tool():
+    tool = TOOL_FUNCTIONS.get("source_audit")
+    assert callable(tool), "source_audit is not registered"
+    return tool
 
 # ---------------- clarify ----------------
 
@@ -109,6 +116,8 @@ def test_policy_instruction_like_lines_go_to_untrusted_text() -> None:
 #   1. happy path (mocked if it calls an API)
 #   2. bad / missing input from the model (empty string, wrong type, out-of-enum value)
 #   3. failure path (missing key, HTTP error, timeout) -> returns error dict, does not raise
+
+# ---------------- domain_filter (Quang) ----------------
 
 def test_my_new_tool_happy_path() -> None:
     """1. Happy path: exact domain & subdomain matching."""
@@ -207,7 +216,7 @@ def test_domain_filter_preserves_item_order_across_multiple_domains() -> None:
     items = [
         {"url": "https://b.com/1", "order": 1},
         {"url": "https://a.com/2", "order": 2},
-        {"url": "https://c.com/3", "order": 3},
+        {"url": "https://c.org/ignore", "order": 3},
         {"url": "https://b.com/4", "order": 4},
         {"url": "https://a.com/5", "order": 5},
     ]
@@ -217,28 +226,28 @@ def test_domain_filter_preserves_item_order_across_multiple_domains() -> None:
 
 
 def test_domain_filter_case_insensitive_matching() -> None:
-    """Matching should be case-insensitive for both uppercase URLs and domains."""
+    """Matching should be case-insensitive for both URLs and allowed_domains."""
     filter_func = TOOL_FUNCTIONS["domain_filter"]
     items = [
-        {"url": "HTTPS://NEWS.EXAMPLE.COM/Page", "title": "Upper URL"},
-        {"url": "https://example.com/path", "title": "Lower URL"},
+        {"url": "HTTPS://EXAMPLE.COM/Page", "title": "Uppercase URL"},
+        {"url": "https://Sub.Domain.ORG/test", "title": "Mixed case URL"},
     ]
-    res = filter_func(items=items, allowed_domains=["EXAMPLE.COM"])
+    res = filter_func(items=items, allowed_domains=["Example.Com", "DOMAIN.org"])
     assert res["matched_count"] == 2
     assert res["filtered_out_count"] == 0
 
 
 def test_domain_filter_invalid_input_types_return_error_dict() -> None:
-    """When model passes wrong types for items or allowed_domains, return error dict without raising."""
+    """Contract requirement: tool returns error dict upon invalid types, never raises."""
     filter_func = TOOL_FUNCTIONS["domain_filter"]
 
-    # items is not list
-    res1 = filter_func(items="https://example.com", allowed_domains=["example.com"])
+    # items is not a list
+    res1 = filter_func(items="invalid_string", allowed_domains=["example.com"])
     assert res1.get("tool") == "domain_filter"
     assert res1.get("error") == "TypeError"
     assert "items must be a list" in res1.get("message", "")
 
-    # allowed_domains is not list
+    # allowed_domains is not a list
     res2 = filter_func(items=[{"url": "https://example.com"}], allowed_domains="example.com")
     assert res2.get("tool") == "domain_filter"
     assert res2.get("error") == "TypeError"
@@ -267,8 +276,7 @@ def test_domain_filter_empty_inputs() -> None:
 # ---------------- source_audit (Nghia) ----------------
 
 def test_source_audit_accepts_complete_http_citations() -> None:
-    audit_func = TOOL_FUNCTIONS["source_audit"]
-    result = audit_func(items=[{
+    result = TOOL_FUNCTIONS["source_audit"](items=[{
         "title": "Research report",
         "url": "https://example.org/report",
         "source": "Example",
@@ -285,8 +293,7 @@ def test_source_audit_accepts_complete_http_citations() -> None:
 
 
 def test_source_audit_reports_missing_title_and_invalid_url() -> None:
-    audit_func = TOOL_FUNCTIONS["source_audit"]
-    result = audit_func(items=[
+    result = TOOL_FUNCTIONS["source_audit"](items=[
         {"url": "https://example.org/no-title"},
         {"title": "FTP source", "url": "ftp://example.org/report"},
     ])
@@ -300,9 +307,20 @@ def test_source_audit_reports_missing_title_and_invalid_url() -> None:
     ]
 
 
+def test_source_audit_rejects_non_numeric_url_port() -> None:
+    result = TOOL_FUNCTIONS["source_audit"](items=[
+        {"title": "Bad port", "url": "https://example.org:abc/report"},
+    ])
+
+    assert result["ok"] is False
+    assert result["valid_count"] == 0
+    assert result["issues"] == [
+        {"index": 0, "title": "Bad port", "problems": ["invalid_url"]},
+    ]
+
+
 def test_source_audit_wrong_items_type_returns_error_dict() -> None:
-    audit_func = TOOL_FUNCTIONS["source_audit"]
-    result = audit_func(items="not a list")
+    result = TOOL_FUNCTIONS["source_audit"](items="not a list")
 
     assert result == {
         "tool": "source_audit",
@@ -322,6 +340,17 @@ def test_deduplicate_sources_keeps_first_duplicate_and_order() -> None:
     result = deduplicate_tool(items=[first, duplicate, second])
 
     assert result["items"] == [first, second]
+    assert result["removed_count"] == 1
+
+
+def test_deduplicate_sources_normalizes_trailing_slash() -> None:
+    deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+    canonical = {"title": "First", "url": "https://openai.com/blog/gpt-5"}
+    duplicate = {"title": "Duplicate", "url": "https://openai.com/blog/gpt-5/"}
+
+    result = deduplicate_tool(items=[canonical, duplicate])
+
+    assert result["items"] == [canonical]
     assert result["removed_count"] == 1
 
 
