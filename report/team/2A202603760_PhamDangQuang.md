@@ -65,7 +65,7 @@
 ### 4.2. Công cụ AI và cách tự kiểm tra kết quả
 - **Công cụ AI đã sử dụng:** Google Antigravity Assistant (Gemini 3.8 Flash). Sử dụng để hỗ trợ thiết kế edge cases kiểm thử, sinh các trường hợp URL mạo danh, chuẩn hóa evaluator và rà soát schema test case.
 - **Cách tự kiểm tra kết quả:**
-  - Chạy `pytest tests/test_tools_todo.py -v`: **20 passed**, 14 skipped (tất cả 4 custom tools đều đạt 100% tests).
+  - Chạy `pytest tests/test_tools_todo.py -v`: **22 passed**, 14 skipped (tất cả 4 custom tools đều đạt 100% tests).
   - Chạy `pytest tests/test_tool_contract.py -v`: **77/77 passed** (bao gồm test bảo vệ thứ tự `items` và kiểm tra hợp đồng 4 tools).
   - Kiểm tra nạp và tự đối chiếu dataset: Chạy `run_eval.load_cases(Path('data/eval_group.json'), 'B')` và `compare_subset` thành công 10/10 case không lỗi schema hay kiểu dữ liệu.
 

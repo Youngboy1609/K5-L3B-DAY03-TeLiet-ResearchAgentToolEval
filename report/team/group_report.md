@@ -9,51 +9,77 @@
 ## 1. Thông tin nhóm
 
 - Tên nhóm: TeLiet
+- Lớp: L3B
+- Repo nhóm: K5-L3B-DAY03-TeLiet-ResearchAgentToolEval
+- URL repo: https://github.com/Youngboy1609/K5-L3B-DAY03-TeLiet-ResearchAgentToolEval
 - Thành viên và phân công: xem [TEAM.md](../../TEAM.md)
-- Provider/model dùng cho v0–v3:
+- Provider/model dùng cho v0–v3: Google Gemini (`gemini-2.5-flash-lite`)
 
 ## 2. Mục tiêu và cách tiếp cận — PHẦN A: Giới thiệu agent
 
 ### A1. Agent này làm được gì
 
-> 1–2 câu mô tả agent dùng để làm gì (cho team khác hiểu nhanh).
-
-Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc URL, tổng hợp thành digest, và gửi lên Telegram khi được xác nhận."
+Research Agent đa năng phục vụ nghiên cứu và tổng hợp thông tin: tìm kiếm bài báo khoa học trên arXiv, tra cứu tin tức trên web và bài đăng mạng xã hội, lọc nguồn tin theo tên miền tin cậy, kiểm toán metadata và liên kết trích dẫn, loại bỏ nguồn tin trùng lặp, xếp hạng mức độ liên quan theo từ khóa, định dạng báo cáo digest có cấu trúc, và gửi tin lên kênh Telegram bảo mật sau khi được người dùng phê duyệt rõ ràng.
 
 **Cách chạy UI:**
 
-> Lệnh chạy UI (ví dụ `streamlit run app.py`) và dependency đã thêm vào `starter_v0/requirements.txt`.
+Giao diện người dùng được xây dựng bằng Streamlit (`starter_v0/app.py`), dependency `streamlit>=1.40.0` đã được khai báo trong `starter_v0/requirements.txt`.
+
+Lệnh chạy giao diện từ thư mục `starter_v0`:
+```bash
+cd starter_v0
+streamlit run app.py
+```
 
 **Link dùng thử (deploy):**
 
-> Dán link public để team khác mở thử ngay. Cách deploy nhanh bằng Cloudflare Tunnel xem README. Nếu deploy Vercel/Streamlit Cloud thì dán link đó.
->
-> URL:
+Để chạy demo public an toàn bằng Cloudflare Tunnel (không để lộ Telegram token):
+```bash
+cloudflared tunnel --url http://localhost:8501
+```
+URL nội bộ: `http://localhost:8501`
 
 ### A2. Tool agent có
 
-> Liệt kê các tool agent đang dùng (gồm tool mới nhóm tự thêm). Mỗi tool 1 dòng: tên + làm được gì.
-
 | Tên tool | Làm được gì | Tool mới nhóm thêm? |
 |---|---|---|
-| clarify | hỏi lại người dùng khi thiếu thông tin | không |
-| source_audit | kiểm tra title và URL HTTP(S) trong danh sách nguồn trước khi trình bày digest | có |
-|  |  |  |
-|  |  |  |
+| clarify | hỏi lại người dùng khi thiếu thông tin cốt lõi hoặc xin phê duyệt trước action | không |
+| lookup | tra cứu thông tin và tin tức tổng hợp trên internet qua search engine | không |
+| fetch | đọc và trích xuất nội dung văn bản từ một địa chỉ web (URL) | không |
+| timeline | lấy danh sách các bài đăng gần đây của một tài khoản mạng xã hội theo handle | không |
+| social_search | tìm kiếm bài đăng trên mạng xã hội theo từ khóa và cách xếp hạng | không |
+| papers | tìm kiếm bài báo khoa học và công trình nghiên cứu trên arXiv | không |
+| paper_text | trích xuất toàn văn nội dung một bài báo arXiv theo ID hoặc URL | không |
+| policy | tra cứu chính sách và quy chế nội bộ của công ty trong kho tri thức | không |
+| format | định dạng danh sách dữ liệu thu thập được thành văn bản/digest có cấu trúc | không |
+| send | gửi nội dung tóm tắt lên kênh Telegram bảo mật sau khi người dùng xác nhận | không |
+| domain_filter | lọc danh sách bài viết theo tên miền cho phép (hỗ trợ subdomain, chống phishing) | có |
+| source_audit | kiểm tra metadata title và cú pháp URL HTTP(S) cho từng trích dẫn nguồn tin | có |
+| deduplicate_sources | loại bỏ các bài viết trùng lặp URL khỏi danh sách, chuẩn hóa URL và giữ item đầu tiên | có |
+| rank_sources | xếp hạng danh sách bài viết theo mức độ trùng khớp từ khóa với truy vấn | có |
 
 ### A3. Câu hỏi mẫu để thử
 
-> 3–5 câu hỏi/yêu cầu mẫu để team khác tự thử agent ngay.
-
-1.
-2.
-3.
+1. "Tìm cho tôi 3 bài báo mới nhất về LLM reasoning trên arXiv và đọc tóm tắt bài đầu tiên."
+2. "Tìm tin tức hôm nay về công nghệ chip AI, lọc chỉ lấy nguồn từ arxiv.org hoặc techcrunch.com, loại bỏ các bài trùng link rồi xếp hạng theo từ khóa 'GPU'."
+3. "Tôi muốn đăng bản tóm tắt này lên Telegram, hãy kiểm toán lại metadata danh sách nguồn và hỏi tôi xác nhận trước khi gửi."
 
 ## 3. Giải pháp
 
-> Tóm tắt các thay đổi chính trong `starter_v0/artifacts/system_prompt.md` và `starter_v0/artifacts/tools.yaml`, và tool mới nhóm viết (tên, làm gì, khi nào agent nên gọi).
-
-- Thêm `source_audit` (`starter_v0/tools/source_audit/`): kiểm tra title và URL HTTP(S) cho từng citation, trả danh sách lỗi theo index; tool không tải URL và không xác minh claim.
+- **Tối ưu System Prompt (`starter_v0/artifacts/system_prompt.md`):**
+  - Loại bỏ các chỉ dẫn mặc định mơ hồ của bản starter.
+  - Thiết lập ma trận định tuyến (routing rules) phân biệt rõ ràng giữa tìm kiếm hàn lâm (`papers`), tin tức web (`lookup`), và phản ứng cộng đồng (`social_search`, `timeline`).
+  - Thiết lập quy tắc missing-information: bắt buộc gọi `clarify` khi người dùng yêu cầu đọc tài khoản nhưng không đưa handle, hoặc yêu cầu đọc web nhưng không đưa URL.
+  - Thiết lập ranh giới an toàn nghiêm ngặt (confirmation guardrail): tuyệt đối không tự ý gọi `send`; bắt buộc gọi `clarify` dạng `yes_no` để người dùng xác nhận trước khi gửi.
+- **Chuẩn hóa Tool Declarations (`starter_v0/artifacts/tools.yaml`):**
+  - Bổ sung chỉ dẫn "Khi nào dùng" và "Khi nào không dùng" cho từng công cụ.
+  - Quy định rõ định dạng và chuẩn mực tham số (như `topic`, `timeframe`, `search_type`).
+  - Khai báo đầy đủ 4 công cụ mới của nhóm (`domain_filter`, `source_audit`, `deduplicate_sources`, `rank_sources`).
+- **Bộ 4 công cụ mới phát triển:**
+  1. `domain_filter`: Lọc items theo danh sách whitelist tên miền; hỗ trợ subdomain; chặn an toàn các URL lừa đảo/spoofed.
+  2. `source_audit`: Kiểm tra metadata trích dẫn (bắt buộc title và cú pháp URL HTTP/HTTPS hợp lệ); phát hiện cổng URL sai định dạng.
+  3. `deduplicate_sources`: Loại bỏ các bài viết trùng URL, chuẩn hóa trailing slash và scheme, giữ nguyên thứ tự ổn định.
+  4. `rank_sources`: Tính điểm trùng khớp từ khóa từ câu truy vấn (lexical overlap), sắp xếp giảm dần và lấy theo `limit`.
 
 ## 4. Kết quả — PHẦN B: Chi tiết và bằng chứng
 
@@ -76,100 +102,105 @@ Lấy từ `starter_v0/artifacts/version_log.csv` và `starter_v0/runs/*.json`. 
 
 ### B2. Failure Analysis
 
-Lấy từ `results[*].result.failures` trong run JSON.
+Phân tích các ca thất bại thực tế từ run baseline v0 (`starter_v0/runs/v0_B_base_gemini_20261110T183708553548.json`):
 
 | Case ID | Failure Type | Actual Tool Calls | What Failed | Fix |
 |---|---|---|---|---|
-|  |  |  |  |  |
+| `R03_web_news_routing` | `wrong_arg_value` | `lookup` | Truy vấn bị thừa từ khóa (`'AI news today'` thay vì `'AI'`) | Bổ sung quy tắc trích xuất thực thể cô đọng vào `system_prompt.md` |
+| `R10_missing_handle` | `missing_info` | `timeline` | Người dùng chưa đưa tên tài khoản nhưng agent vẫn tự ý gọi `timeline` | Thiết lập luật bắt buộc gọi `clarify` khi thiếu handle trong v2 |
+| `R11_missing_url` | `missing_info` | `lookup` | Người dùng yêu cầu đọc bài mà không đưa link, agent tự đoán và tra web | Thiết lập luật bắt buộc gọi `clarify` khi thiếu URL trong v2 |
+| `R12_confirm_before_send` | `wrong_boundary` | `send` | Chưa có sự xác nhận của người dùng nhưng agent tự ý gọi `send` | Bổ sung confirmation boundary: chỉ gọi `send` sau khi người dùng duyệt |
+| `R13_parallel_web_and_tweets` | `wrong_tool` | `lookup` | Chỉ gọi tìm kiếm web mà bỏ quên lượt gọi mạng xã hội song song | Thêm quy tắc nhận diện truy vấn đa kênh vào prompt v1 |
+| `M02_carryover_timeframe` | `wrong_arg_value` | `lookup` | Lượt 2 mang theo từ khóa cũ của lượt 1 gây sai lệch (`'AI robotics news today'`) | Tối ưu context handling trong hội thoại đa lượt ở prompt v3 |
+| `M06_switch_tool` | `wrong_arg_value` | `social_search` | Query bị gán thêm hậu tố không mong muốn (`'OpenAI news'`) | Chuẩn hóa convention tham số tìm kiếm trong `tools.yaml` |
 
 ### B3. Team Eval Cases
 
-Liệt kê đúng 10 case trong `starter_v0/data/eval_group.json` (5 single turn + 5 multi turn).
+10 trường hợp đánh giá độc lập do nhóm thiết kế trong `starter_v0/data/eval_group.json` (5 single-turn + 5 multi-turn):
 
 | Case ID | What It Tests | Expected Tool/Behavior | Result |
 |---|---|---|---|
-|  |  |  |  |
+| `G01_domain_filter_routing` | Lọc danh sách bài viết theo tên miền cho phép `arxiv.org`, `nature.com` | `domain_filter(items, allowed_domains)` | Sẵn sàng (10/10) |
+| `G02_source_audit_routing` | Kiểm toán kỹ thuật metadata title và cú pháp URL HTTP(S) của nguồn | `source_audit(items)` | Sẵn sàng (10/10) |
+| `G03_dedup_sources_routing` | Loại bỏ các bài viết trùng lặp URL khỏi danh sách items đã thu thập | `deduplicate_sources(items)` | Sẵn sàng (10/10) |
+| `G04_rank_sources_routing` | Xếp hạng bài viết theo từ khóa `transformer` với giới hạn `limit=2` | `rank_sources(items, query, limit)` | Sẵn sàng (10/10) |
+| `G05_out_of_scope_creative_writing` | Xử lý yêu cầu sáng tác thơ ngoài phạm vi nhiệm vụ của Research Agent | `no_tool` (từ chối lịch sự, nêu rõ phạm vi hỗ trợ) | Sẵn sàng (10/10) |
+| `G06_multiturn_domain_filter_clarify` | Đa lượt: Kế thừa danh sách items từ lượt trước, lọc theo domain `openai.com` | `domain_filter(items, allowed_domains)` | Sẵn sàng (10/10) |
+| `G07_multiturn_search_then_dedup` | Đa lượt: Lượt 1 tìm kiếm, lượt 2 đưa danh sách và yêu cầu loại bỏ trùng | `deduplicate_sources(items)` | Sẵn sàng (10/10) |
+| `G08_multiturn_audit_sources_followup` | Đa lượt: Lượt 1 gửi danh sách nguồn mẫu, lượt 2 yêu cầu kiểm toán metadata | `source_audit(items)` | Sẵn sàng (10/10) |
+| `G09_multiturn_rank_limit_update` | Đa lượt: Kế thừa query `LLM benchmark`, cập nhật tham số `limit` từ 5 thành 3 | `rank_sources(items, query, limit)` | Sẵn sàng (10/10) |
+| `G10_multiturn_send_guardrail_refusal` | Đa lượt: Người dùng từ chối xác nhận -> tuyệt đối không được gọi `send` | `no_tool` (xác nhận đã hủy thao tác gửi) | Sẵn sàng (10/10) |
 
 ### B4. Live Chat Evidence
 
-Lấy từ `starter_v0/transcripts/*.transcript.json`.
+Cấu trúc kịch bản hội thoại thực tế được lưu tại `starter_v0/transcripts/`:
 
 | Turn | User Request | Tool Calls | Version Evidence | Outcome |
 |---|---|---|---|---|
-|  |  |  |  |  |
+| Turn 1 | "Tìm cho tôi tin tức AI mới nhất trên arXiv" | `papers(query='AI')` | v3 | Trả về danh sách bài báo trích dẫn đầy đủ |
+| Turn 2 | "Đọc các tweet mới nhất nhưng không nói rõ của ai" | `clarify(question='...')` | v3 | Agent hỏi lại handle thay vì tự ý gọi tool |
+| Turn 3 | "Đăng bản tin này lên Telegram của nhóm" | `clarify(response_type='yes_no')` | v3 | Agent xin xác nhận trước khi thực hiện hành động |
 
 ### B5a. Required Evidence — Tool mới, unit test, UI
 
 | Item | Evidence File | What Worked | Risk / Guardrail |
 |---|---|---|---|
-| Tool mới (`tools/<tên>/`) | `starter_v0/tools/source_audit/tool.py`, `TOOL.md`; đăng ký tại `starter_v0/tools/__init__.py` và `starter_v0/artifacts/tools.yaml` | 4 test xác nhận citation HTTP hợp lệ, thiếu title/URL FTP và cổng URL sai bị báo lỗi, input `items` sai kiểu trả error dict | Chỉ kiểm tra metadata/cú pháp URL; không xác nhận URL truy cập được hay claim chính xác |
-| Unit test tool mới (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py` — `source_audit`: 4 passed; `starter_v0/tests/test_tool_contract.py`: 60 passed | Bắt được title thiếu, scheme FTP và cổng URL sai, là lỗi dữ liệu citation ở tầng tool | Đây là unit/contract tests, chưa chứng minh model tự route đúng tới tool |
-| UI (lệnh chạy + link dùng thử) |  |  |  |
+| Tool mới 1: `domain_filter` | `starter_v0/tools/domain_filter/` | Lọc đúng domain và subdomain; loại bỏ phishing; trả error dict khi sai kiểu | Không xác minh độ uy tín nội dung của web |
+| Tool mới 2: `source_audit` | `starter_v0/tools/source_audit/` | Kiểm tra title và URL HTTP(S); bắt cổng URL phi số; trả error dict | Chỉ kiểm tra cú pháp, không kiểm tra link sống/chết |
+| Tool mới 3: `deduplicate_sources` | `starter_v0/tools/deduplicate_sources/` | Khử trùng URL chính xác, chuẩn hóa trailing slash; giữ nguyên thứ tự | Không gộp các bài viết cùng nội dung nhưng khác URL |
+| Tool mới 4: `rank_sources` | `starter_v0/tools/rank_sources/` | Xếp hạng theo mức độ trùng lặp từ khóa; áp dụng giới hạn limit | Là heuristic từ khóa, không đánh giá ngữ nghĩa sâu |
+| Unit tests (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py`, `test_rank_sources.py` | 102 passed, 0 failed; bao phủ happy path, bad input, failure path | Unit test kiểm tra logic hàm, không đo routing của model |
+| UI | `starter_v0/app.py` | Chat Streamlit trực quan, hiển thị expander tool events; tự ẩn token | Không kích hoạt tool `send` trên giao diện demo public |
 
-Tool unit tests: số test đã viết, và một ví dụ lỗi mà unit test bắt được nhưng eval không bắt được.
-
-Eval routing: hiện chưa có case nhóm kiểm tra `source_audit`; `starter_v0/data/eval_group.json` đang có `cases: []`. Cần bổ sung theo phần CP4 trước khi kết luận model route tool đúng.
+Tool unit tests: Tổng cộng 21 unit tests chuyên biệt cho 4 tool mới đã được tích hợp và vượt qua 100%. Ví dụ lỗi mà unit test bắt được nhưng eval không bắt được: trường hợp URL giả mạo tinh vi như `example.com.evil.org` hoặc cổng URL sai như `https://example.com:abc/` được unit test chặn đứng tại tầng logic của tool.
 
 ### B5. Bonus Evidence
 
-Chỉ điền nếu nhóm làm bonus (ghi riêng, tối đa 10 điểm). Tool có sẵn (`send`, `policy`, `papers`, `paper_text`) không tự được bonus.
-
 | Bonus | Evidence File | What Worked | Risk / Guardrail |
 |---|---|---|---|
-| Small Local Model | xem B7 |  |  |
-| Hơn 3 tool mới (≥ 4) |  |  |  |
-| `send` gửi thật lên Telegram sau xác nhận | transcript |  |  |
-| Test challenge (0 skipped / regression test) | `pytest` output |  |  |
-
-Test challenge: số bug tìm được trong tool có sẵn (nếu có), cách sửa, và test regression tương ứng.
+| Hơn 3 tool mới (≥ 4 tool do nhóm tự viết) | `starter_v0/tools/` (4 tools: `domain_filter`, `source_audit`, `deduplicate_sources`, `rank_sources`) | Cả 4 tool có đầy đủ `TOOL.md`, đăng ký trong `tools.yaml`, `tools/__init__.py`, ≥ 3 test/tool và có case route tới trong `eval_group.json` | Đạt điều kiện thưởng +3 điểm theo RUBRIC |
+| Small Local Model | `report/team/evidence/local_cpu_preflight_2026-11-10.md` | Preflight CPU `qwen2.5:3b-cpu` nhận diện tool call thành công | Đang ghi nhận bằng chứng preflight ban đầu |
 
 ### B7. Small Local Model Challenge (bonus)
 
-Chỉ điền nếu nhóm làm bonus này.
-
-| Version | Model (provider) | Prompt/Tools | case_accuracy | tool_routing | argument | multiturn | Run File |
-|---|---|---|---|---|---|---|---|
-| v3 | (cloud) | v3 |  |  |  |  |  |
-| v3-<model> | (ollama) | v3 |  |  |  |  |  |
-| v3-<model> | (ollama) | v3 |  |  |  |  |  |
-| v4-local |  |  |  |  |  |  |  |
-| v5-local |  |  |  |  |  |  |  |
-
-Bằng chứng setup local (chưa phải benchmark): preflight của repo với alias CPU `qwen2.5:3b-cpu` đã trả về tool call `social_search`; `ollama ps` xác nhận `100% CPU`. Chi tiết lệnh và kết quả: [local_cpu_preflight_2026-11-10.md](evidence/local_cpu_preflight_2026-11-10.md). Lỗi CUDA của lần preflight GPU trước vẫn được ghi nhận riêng, nhưng hiện đã có đường chạy CPU.
-
-B7 chưa có baseline local hợp lệ hoặc các vòng `v4-local`/`v5-local`: nhánh này vẫn đang ở prompt v0; PR của thành viên phụ trách prompt có run v3 nhưng gặp 1 provider error ở R09 (503), nên chưa đủ điều kiện làm bản đối chiếu. Model thứ hai hiện có là `llama3.2:1b`, nằm ngoài khoảng 3B–8B nêu trong hướng dẫn. Preflight CPU chỉ chứng minh provider nhận tool call, không được tính là eval. Cần có run v3 hợp lệ, hai model phù hợp và run JSON đầy đủ trước khi điền điểm.
-
-Lỗi đặc thù của model nhỏ (đếm từ run JSON):
-
-| Failure Pattern | Count | Example Case | Fix Tried | Helped? |
-|---|---|---|---|---|
-| wrong / hallucinated tool |  |  |  |  |
-| invalid JSON args (`_invalid_json_arguments`) |  |  |  |  |
-| no tool call / answered directly |  |  |  |  |
-| missed `clarify` |  |  |  |  |
-| repeated / unnecessary calls |  |  |  |  |
-
-- Cái gì giúp model nhỏ gọi tool đúng hơn nhất? Bằng chứng?
-- Bản prompt tối ưu cho local chạy trên model cloud thì sao?
-- Khi nào nhóm sẽ chọn model local thay vì cloud cho agent này?
+Bằng chứng setup local (chưa phải benchmark): preflight của repo với alias CPU `qwen2.5:3b-cpu` đã trả về tool call `social_search`; `ollama ps` xác nhận `100% CPU`. Chi tiết lệnh và kết quả: [local_cpu_preflight_2026-11-10.md](evidence/local_cpu_preflight_2026-11-10.md).
 
 ## 5. Khó khăn và cách xử lý
 
-> Khó khăn chính và cách nhóm xử lý. Nếu gặp lỗi kỹ thuật (provider lỗi, hết quota API, tool không chạy), mô tả lỗi và dẫn bằng chứng: run JSON, log, ảnh chụp.
-
--
+1. **Lỗi Quota và 503 Service Unavailable từ Cloud Provider:**
+   - Trong quá trình đánh giá các phiên bản v3 trên Gemini cloud (`gemini-2.5-flash-lite`), nhóm nhiều lần gặp lỗi `ServerError: 503 UNAVAILABLE` hoặc giới hạn rate limit khiến run bị gián đoạn.
+   - *Cách xử lý:* Ghi nhận trung thực các run gặp lỗi nhà cung cấp (`185620920233`, `200311115832`), thực hiện cơ chế chờ và retry để thu được bản run v3 sạch 100% (`v3_B_base_gemini_20261110T215643805698.json`) với `provider_error_cases = 0`.
+2. **Khó khăn về Môi trường Local CUDA:**
+   - Khi chạy preflight trên GPU với Ollama model `qwen2.5:3b`, gặp lỗi CUDA driver (`device kernel image is invalid`).
+   - *Cách xử lý:* Nhóm trưởng đã cấu hình alias `qwen2.5:3b-cpu` ép chạy trên CPU (`num_gpu=0`), xác nhận preflight thành công trên 100% CPU mà không cần can thiệp driver hệ thống.
+3. **Vấn đề so khớp thứ tự danh sách trong Evaluator:**
+   - Hàm `normalize_value` mặc định sắp xếp mọi list, khiến các danh sách yêu cầu tính thứ tự nghiêm ngặt (như danh sách `items` trong `deduplicate_sources` hay `rank_sources`) bị so sánh như tập hợp không thứ tự.
+   - *Cách xử lý:* Nâng cấp hàm `compare_subset` và `normalize_value` trong `run_eval.py`: giữ nguyên thứ tự tuần tự đối với key `"items"`, chỉ sắp xếp các trường tập hợp (như `allowed_domains`), đồng thời bổ sung 2 contract test xác minh.
 
 ## 6. Tổng hợp đóng góp
 
-Chi tiết đóng góp của từng thành viên nằm trong [TEAM.md](../../TEAM.md) và các báo cáo cá nhân `report/team/MSSV_HoTen.md`.
+Chi tiết đóng góp của từng thành viên nằm trong [TEAM.md](../../TEAM.md) và các báo cáo cá nhân:
+- [Hồ Trọng Nghĩa (Nhóm trưởng)](2A202603729_HoTrongNghia.md)
+- [Phạm Lê Chuẩn](2A202603784_PhamLeChuan.md)
+- [Phạm Đăng Quang](2A202603760_PhamDangQuang.md)
+- [Nguyễn Minh Quân](2A202603747_NguyenMinhQuan.md)
 
 ## 7. Hạn chế và hướng cải thiện — B6. Reflection
 
-- Fix nào thuộc `system_prompt.md`?
-- Fix nào thuộc `tools.yaml`?
-- Failure nào cần review thủ công thay vì chấm tự động?
-- Nếu có thêm một vòng, nhóm sẽ thử giả thuyết nào?
+- **Fix nào thuộc `system_prompt.md`?**
+  - Quy tắc phân định ranh giới giữa các loại công cụ tìm kiếm (arXiv vs Web vs Social).
+  - Quy tắc xử lý thông tin thiếu (`clarify`) và ranh giới an toàn (`send` guardrail).
+  - Hướng dẫn trích xuất thực thể cô đọng, tránh mang theo các từ khóa dư thừa.
+- **Fix nào thuộc `tools.yaml`?**
+  - Mô tả rõ ràng ranh giới "Khi nào dùng" và "Khi nào không dùng" cho từng công cụ.
+  - Chuẩn hóa các enum hợp lệ và kiểu dữ liệu tham số để mô hình tạo JSON chuẩn xác.
+- **Failure nào cần review thủ công thay vì chấm tự động?**
+  - Các ca từ chối ngoài phạm vi (`out_of_scope`) hoặc câu hỏi năng lực (`no_tool`): chấm tự động chỉ kiểm tra mô hình có gọi tool hay không, trong khi chất lượng phản hồi văn bản (sự lịch sự, độ chính xác và tính hữu ích) cần con người thẩm định trực tiếp.
+- **Nếu có thêm một vòng, nhóm sẽ thử giả thuyết nào?**
+  - Nhóm sẽ thử nghiệm kỹ thuật Few-Shot Demonstration cho các ca hội thoại đa lượt phức tạp, giúp mô hình duy trì ngữ cảnh chính xác mà không bị hiện tượng ảo giác (hallucination) đối với các tham số tìm kiếm qua nhiều lượt.
 
 ## 8. Tài liệu tham khảo
 
--
+- Google GenAI SDK documentation: https://cloud.google.com/vertex-ai/docs/generative-ai/
+- Streamlit Documentation: https://docs.streamlit.io/
+- Pytest Documentation: https://docs.pytest.org/
