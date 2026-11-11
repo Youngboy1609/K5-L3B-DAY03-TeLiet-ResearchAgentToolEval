@@ -97,11 +97,19 @@ def case_messages(case: dict[str, Any]) -> list[dict[str, str]]:
     return [{"role": "user", "content": case.get("input") or case.get("query", "")}]
 
 
-def normalize_value(value: Any) -> Any:
+def normalize_value(value: Any, sort_lists: bool = True) -> Any:
     if isinstance(value, str):
         return value.strip().lower()
+    if isinstance(value, dict):
+        return {k: normalize_value(v, sort_lists=sort_lists) for k, v in value.items()}
     if isinstance(value, list):
-        return sorted(normalize_value(item) for item in value)
+        normalized = [normalize_value(item, sort_lists=sort_lists) for item in value]
+        if sort_lists:
+            try:
+                return sorted(normalized)
+            except TypeError:
+                return sorted(normalized, key=lambda x: json.dumps(x, sort_keys=True) if isinstance(x, dict) else str(x))
+        return normalized
     return value
 
 
@@ -120,8 +128,12 @@ def compare_subset(expected: dict[str, Any], actual: dict[str, Any]) -> tuple[bo
             expected_set = set(normalize_value(expected_value))
             actual_set = set(normalize_value(actual_value or []))
             ok = expected_set.issubset(actual_set)
+        elif key == "items":
+            # Order matters for items (e.g. deduplicate keeps first, rank order is stable)
+            ok = normalize_value(actual_value, sort_lists=False) == normalize_value(expected_value, sort_lists=False)
         else:
-            ok = normalize_value(actual_value) == normalize_value(expected_value)
+            # Unordered fields (like allowed_domains, options, tags) allow matching regardless of element order
+            ok = normalize_value(actual_value, sort_lists=True) == normalize_value(expected_value, sort_lists=True)
         if ok:
             correct += 1
         else:

@@ -24,9 +24,25 @@ if "messages" not in st.session_state:
 if "history" not in st.session_state:
     st.session_state.history = []
 
-api_key_ready = bool(os.getenv("OPENROUTER_API_KEY"))
+provider_choice = os.getenv("DEFAULT_PROVIDER") or (
+    "gemini" if os.getenv("GEMINI_API_KEY")
+    else "openrouter" if os.getenv("OPENROUTER_API_KEY")
+    else "openai" if os.getenv("OPENAI_API_KEY")
+    else "anthropic" if os.getenv("ANTHROPIC_API_KEY")
+    else "ollama" if os.getenv("OLLAMA_MODEL")
+    else "openrouter"
+)
+
+api_key_ready = bool(
+    os.getenv("GEMINI_API_KEY")
+    or os.getenv("OPENROUTER_API_KEY")
+    or os.getenv("OPENAI_API_KEY")
+    or os.getenv("ANTHROPIC_API_KEY")
+    or os.getenv("OLLAMA_MODEL")
+)
+
 if not api_key_ready:
-    st.info("Chưa có OPENROUTER_API_KEY trong .env. Giao diện đã sẵn sàng; cần key để chat với agent.")
+    st.info("Chưa có API key (OPENROUTER_API_KEY hoặc GEMINI_API_KEY) trong .env. Giao diện đã sẵn sàng; cần key để chat với agent.")
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -49,7 +65,7 @@ if user_text:
         # Do not offer the action tool in the public UI.
         declarations = [tool for tool in declarations if tool["name"] != "send"]
         tools = to_openai_tools(declarations)
-        provider = make_provider("openrouter")
+        provider = make_provider(provider_choice)
 
         messages = [
             {"role": "system", "content": prompt},

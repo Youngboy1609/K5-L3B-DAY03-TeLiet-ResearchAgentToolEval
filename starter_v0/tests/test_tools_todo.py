@@ -117,44 +117,166 @@ def test_policy_instruction_like_lines_go_to_untrusted_text() -> None:
 #   2. bad / missing input from the model (empty string, wrong type, out-of-enum value)
 #   3. failure path (missing key, HTTP error, timeout) -> returns error dict, does not raise
 
-def test_deduplicate_sources_keeps_first_duplicate_and_order() -> None:
-    first = {"title": "First", "url": "https://example.com/a"}
-    duplicate = {"title": "Duplicate", "url": "https://example.com/a"}
-    second = {"title": "Second", "url": "https://example.com/b"}
+# ---------------- domain_filter (Quang) ----------------
 
-    result = deduplicate_tool(items=[first, duplicate, second])
-
-    assert result["items"] == [first, second]
-    assert result["removed_count"] == 1
+def test_my_new_tool_happy_path() -> None:
+    """1. Happy path: exact domain & subdomain matching."""
+    test_domain_filter_exact_and_subdomain_matches()
 
 
-def test_deduplicate_sources_normalizes_trailing_slash() -> None:
-    canonical = {"title": "First", "url": "https://openai.com/blog/gpt-5"}
-    duplicate = {"title": "Duplicate", "url": "https://openai.com/blog/gpt-5/"}
-
-    result = deduplicate_tool(items=[canonical, duplicate])
-
-    assert result["items"] == [canonical]
-    assert result["removed_count"] == 1
+def test_my_new_tool_bad_input_from_model() -> None:
+    """2. Bad/dirty input from model: dirty allowed domains & malformed URLs."""
+    test_domain_filter_normalizes_dirty_allowed_domains()
+    test_domain_filter_handles_malformed_urls_and_items()
 
 
-def test_deduplicate_sources_keeps_items_without_url() -> None:
-    no_url = {"title": "No URL"}
-    empty_url = {"title": "Empty URL", "url": ""}
-
-    result = deduplicate_tool(items=[no_url, empty_url])
-
-    assert result["items"] == [no_url, empty_url]
-    assert result["removed_count"] == 0
+def test_my_new_tool_failure_returns_error_dict() -> None:
+    """3. Failure path: invalid types return error dict without raising."""
+    test_domain_filter_invalid_input_types_return_error_dict()
 
 
-def test_deduplicate_sources_invalid_items_returns_error_dict() -> None:
-    result = deduplicate_tool(items="not-a-list")
+def test_domain_filter_exact_and_subdomain_matches() -> None:
+    """Verifies that exact domains, valid subdomains, and deeply nested subdomains match."""
+    filter_func = TOOL_FUNCTIONS["domain_filter"]
+    items = [
+        {"url": "https://example.com/page1", "title": "Exact match"},
+        {"url": "http://news.example.com/article", "title": "Subdomain match"},
+        {"url": "https://deep.sub.news.example.com/story", "title": "Deep subdomain"},
+        {"url": "https://unrelated.org/test", "title": "Unrelated domain"},
+    ]
+    res = filter_func(items=items, allowed_domains=["example.com"])
+    assert res["matched_count"] == 3
+    assert res["filtered_out_count"] == 1
+    assert [it["title"] for it in res["items"]] == [
+        "Exact match",
+        "Subdomain match",
+        "Deep subdomain",
+    ]
 
-    assert result["error"] == "TypeError"
-    assert "items must be a list" in result["message"]
+
+def test_domain_filter_rejects_deceptive_and_spoofed_domains() -> None:
+    """Critical security test: rejects phishing, deceptive suffixes, and prefix-spoofed domains."""
+    filter_func = TOOL_FUNCTIONS["domain_filter"]
+    items = [
+        {"url": "https://example.com.evil.org/phish", "title": "Deceptive suffix"},
+        {"url": "https://fakeexample.com/login", "title": "Missing dot separator"},
+        {"url": "https://example.com-attacker.net/", "title": "Hyphenated attack"},
+        {"url": "https://not-example.com/fake", "title": "Prefixed domain"},
+        {"url": "https://example.com:8080/legit", "title": "Legit with port"},
+    ]
+    res = filter_func(items=items, allowed_domains=["example.com"])
+    assert res["matched_count"] == 1
+    assert res["items"][0]["title"] == "Legit with port"
+    assert res["filtered_out_count"] == 4
+
+
+def test_domain_filter_normalizes_dirty_allowed_domains() -> None:
+    """LLMs often pass domains with protocol, www prefix, uppercase, or trailing slash."""
+    filter_func = TOOL_FUNCTIONS["domain_filter"]
+    dirty_domains = [
+        "https://example.com/",
+        "  WWW.TECHCRUNCH.COM  ",
+        "vinuni.edu.vn/admissions",
+        "arxiv.org:443",
+    ]
+    items = [
+        {"url": "https://example.com/ai", "title": "Example AI"},
+        {"url": "https://techcrunch.com/funding", "title": "TechCrunch"},
+        {"url": "https://sub.vinuni.edu.vn/research", "title": "VinUni Sub"},
+        {"url": "http://arxiv.org/abs/2401.0001", "title": "arXiv Paper"},
+        {"url": "https://unallowed.com/news", "title": "Unallowed"},
+    ]
+    res = filter_func(items=items, allowed_domains=dirty_domains)
+    assert res["matched_count"] == 4
+    assert res["filtered_out_count"] == 1
+
+
+def test_domain_filter_handles_malformed_urls_and_items() -> None:
+    """Items with missing, empty, non-string, or malformed URLs should not crash."""
+    filter_func = TOOL_FUNCTIONS["domain_filter"]
+    items = [
+        {"url": "https://example.com/ok", "title": "Valid"},
+        {"url": "", "title": "Empty URL"},
+        {"url": "   ", "title": "Whitespace URL"},
+        {"url": None, "title": "None URL"},
+        {"title": "Missing URL key"},
+        {"url": 9999, "title": "Int URL"},
+        {"url": "javascript:alert(1)", "title": "JS Scheme"},
+        "not a dictionary",
+    ]
+    res = filter_func(items=items, allowed_domains=["example.com"])
+    assert res["matched_count"] == 1
+    assert res["items"][0]["title"] == "Valid"
+    assert res["filtered_out_count"] == len(items) - 1
+
+
+def test_domain_filter_preserves_item_order_across_multiple_domains() -> None:
+    """Order of matched items in the output list must strictly preserve input order."""
+    filter_func = TOOL_FUNCTIONS["domain_filter"]
+    items = [
+        {"url": "https://b.com/1", "order": 1},
+        {"url": "https://a.com/2", "order": 2},
+        {"url": "https://c.org/ignore", "order": 3},
+        {"url": "https://b.com/4", "order": 4},
+        {"url": "https://a.com/5", "order": 5},
+    ]
+    res = filter_func(items=items, allowed_domains=["a.com", "b.com"])
+    assert res["matched_count"] == 4
+    assert [it["order"] for it in res["items"]] == [1, 2, 4, 5]
+
+
+def test_domain_filter_case_insensitive_matching() -> None:
+    """Matching should be case-insensitive for both URLs and allowed_domains."""
+    filter_func = TOOL_FUNCTIONS["domain_filter"]
+    items = [
+        {"url": "HTTPS://EXAMPLE.COM/Page", "title": "Uppercase URL"},
+        {"url": "https://Sub.Domain.ORG/test", "title": "Mixed case URL"},
+    ]
+    res = filter_func(items=items, allowed_domains=["Example.Com", "DOMAIN.org"])
+    assert res["matched_count"] == 2
+    assert res["filtered_out_count"] == 0
+
+
+def test_domain_filter_invalid_input_types_return_error_dict() -> None:
+    """Contract requirement: tool returns error dict upon invalid types, never raises."""
+    filter_func = TOOL_FUNCTIONS["domain_filter"]
+
+    # items is not a list
+    res1 = filter_func(items="invalid_string", allowed_domains=["example.com"])
+    assert res1.get("tool") == "domain_filter"
+    assert res1.get("error") == "TypeError"
+    assert "items must be a list" in res1.get("message", "")
+
+    # allowed_domains is not a list
+    res2 = filter_func(items=[{"url": "https://example.com"}], allowed_domains="example.com")
+    assert res2.get("tool") == "domain_filter"
+    assert res2.get("error") == "TypeError"
+    assert "allowed_domains must be a list" in res2.get("message", "")
+
+    # both are None
+    res3 = filter_func(items=None, allowed_domains=None)
+    assert res3.get("tool") == "domain_filter"
+    assert res3.get("error") == "TypeError"
+
+
+def test_domain_filter_empty_inputs() -> None:
+    """Empty list inputs are valid and should return zero matches without error."""
+    filter_func = TOOL_FUNCTIONS["domain_filter"]
+
+    res_empty_items = filter_func(items=[], allowed_domains=["example.com"])
+    assert res_empty_items["matched_count"] == 0
+    assert res_empty_items["filtered_out_count"] == 0
+    assert res_empty_items["items"] == []
+
+    res_empty_domains = filter_func(items=[{"url": "https://example.com"}], allowed_domains=[])
+    assert res_empty_domains["matched_count"] == 0
+    assert res_empty_domains["filtered_out_count"] == 1
+
+
+# ---------------- source_audit (Nghia) ----------------
+
 def test_source_audit_accepts_complete_http_citations() -> None:
-    result = _source_audit_tool()(items=[{
+    result = TOOL_FUNCTIONS["source_audit"](items=[{
         "title": "Research report",
         "url": "https://example.org/report",
         "source": "Example",
@@ -171,7 +293,7 @@ def test_source_audit_accepts_complete_http_citations() -> None:
 
 
 def test_source_audit_reports_missing_title_and_invalid_url() -> None:
-    result = _source_audit_tool()(items=[
+    result = TOOL_FUNCTIONS["source_audit"](items=[
         {"url": "https://example.org/no-title"},
         {"title": "FTP source", "url": "ftp://example.org/report"},
     ])
@@ -186,7 +308,7 @@ def test_source_audit_reports_missing_title_and_invalid_url() -> None:
 
 
 def test_source_audit_rejects_non_numeric_url_port() -> None:
-    result = _source_audit_tool()(items=[
+    result = TOOL_FUNCTIONS["source_audit"](items=[
         {"title": "Bad port", "url": "https://example.org:abc/report"},
     ])
 
@@ -198,10 +320,91 @@ def test_source_audit_rejects_non_numeric_url_port() -> None:
 
 
 def test_source_audit_wrong_items_type_returns_error_dict() -> None:
-    result = _source_audit_tool()(items="not a list")
+    result = TOOL_FUNCTIONS["source_audit"](items="not a list")
 
     assert result == {
         "tool": "source_audit",
         "error": "TypeError",
         "message": "items must be a list of objects",
     }
+
+
+# ---------------- deduplicate_sources (Chuan) ----------------
+
+def test_deduplicate_sources_keeps_first_duplicate_and_order() -> None:
+    deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+    first = {"title": "First", "url": "https://example.com/a"}
+    duplicate = {"title": "Duplicate", "url": "https://example.com/a"}
+    second = {"title": "Second", "url": "https://example.com/b"}
+
+    result = deduplicate_tool(items=[first, duplicate, second])
+
+    assert result["items"] == [first, second]
+    assert result["removed_count"] == 1
+
+
+def test_deduplicate_sources_normalizes_trailing_slash() -> None:
+    deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+    canonical = {"title": "First", "url": "https://openai.com/blog/gpt-5"}
+    duplicate = {"title": "Duplicate", "url": "https://openai.com/blog/gpt-5/"}
+
+    result = deduplicate_tool(items=[canonical, duplicate])
+
+    assert result["items"] == [canonical]
+    assert result["removed_count"] == 1
+
+
+def test_deduplicate_sources_keeps_items_without_url() -> None:
+    deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+    no_url = {"title": "No URL"}
+    empty_url = {"title": "Empty URL", "url": ""}
+
+    result = deduplicate_tool(items=[no_url, empty_url])
+
+    assert result["items"] == [no_url, empty_url]
+    assert result["removed_count"] == 0
+
+
+def test_deduplicate_sources_invalid_items_returns_error_dict() -> None:
+    deduplicate_tool = TOOL_FUNCTIONS["deduplicate_sources"]
+    result = deduplicate_tool(items="not-a-list")
+
+    assert result["error"] == "TypeError"
+    assert "items must be a list" in result["message"]
+
+
+# ---------------- rank_sources (Quan) ----------------
+
+def test_rank_sources_more_matching_keywords_rank_first() -> None:
+    rank_func = TOOL_FUNCTIONS["rank_sources"]
+    items = [
+        {"title": "AI news", "summary": ""},
+        {"title": "New AI chip", "summary": "Chip for computers"},
+    ]
+
+    result = rank_func(items=items, query="AI chip", limit=5)
+
+    assert result["items"][0]["title"] == "New AI chip"
+    assert result["items"][1]["title"] == "AI news"
+    assert result["ranked_count"] == 2
+
+
+def test_rank_sources_limit_restricts_number_of_results() -> None:
+    rank_func = TOOL_FUNCTIONS["rank_sources"]
+    items = [
+        {"title": "AI chip"},
+        {"title": "AI model"},
+        {"title": "Other news"},
+    ]
+
+    result = rank_func(items=items, query="AI", limit=1)
+
+    assert len(result["items"]) == 1
+    assert result["ranked_count"] == 3
+
+
+def test_rank_sources_invalid_input_returns_error_dict() -> None:
+    rank_func = TOOL_FUNCTIONS["rank_sources"]
+    result = rank_func(items="not a list", query="AI", limit=5)
+
+    assert result["error"] == "invalid_input"

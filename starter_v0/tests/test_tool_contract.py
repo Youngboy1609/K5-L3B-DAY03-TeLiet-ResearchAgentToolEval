@@ -72,3 +72,26 @@ def test_eval_cases_only_expect_declared_tools(eval_file: str) -> None:
     for case in data.get("cases", []):
         for call in case.get("expect", {}).get("tool_calls", []):
             assert call["name"] in DECLARED, f"{eval_file}:{case['id']} expects undeclared tool '{call['name']}'"
+
+
+def test_compare_subset_preserves_item_order_and_rejects_reversed_items() -> None:
+    from run_eval import compare_subset
+    expected = {"items": [{"url": "https://a.com"}, {"url": "https://b.com"}]}
+    same_actual = {"items": [{"url": "https://a.com"}, {"url": "https://b.com"}]}
+    reversed_actual = {"items": [{"url": "https://b.com"}, {"url": "https://a.com"}]}
+
+    ok_same, _, _, _ = compare_subset(expected, same_actual)
+    assert ok_same is True
+
+    ok_rev, failures, _, _ = compare_subset(expected, reversed_actual)
+    assert ok_rev is False
+    assert any("items" in f for f in failures)
+
+
+def test_compare_subset_sorts_unordered_fields_like_allowed_domains() -> None:
+    from run_eval import compare_subset
+    expected = {"allowed_domains": ["vinuni.edu.vn", "techcrunch.com"]}
+    reversed_domains = {"allowed_domains": ["techcrunch.com", "vinuni.edu.vn"]}
+
+    ok, _, _, _ = compare_subset(expected, reversed_domains)
+    assert ok is True

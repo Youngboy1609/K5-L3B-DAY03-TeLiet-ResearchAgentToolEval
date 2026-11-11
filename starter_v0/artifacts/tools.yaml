@@ -124,6 +124,47 @@ tools:
         max_chars: {type: integer, default: 8000, description: "Số ký tự"}
       required: [arxiv_url]
 
+  - name: domain_filter
+    description: "Lọc danh sách các bài viết/nguồn tin đã có, chỉ giữ lại các bài thuộc các tên miền trong danh sách allowed_domains (hỗ trợ cả subdomain như news.example.com). Khi nào dùng: khi người dùng yêu cầu chỉ lấy tin từ các trang web hoặc domain cụ thể từ danh sách kết quả. Khi nào không dùng: khi tìm kiếm bài viết mới từ đầu trên web."
+    parameters:
+      type: object
+      properties:
+        items:
+          type: array
+          default: []
+          description: "Danh sách các item/bài viết cần lọc"
+          items:
+            type: object
+            properties:
+              url: {type: string}
+              title: {type: string}
+              summary: {type: string}
+        allowed_domains:
+          type: array
+          default: []
+          description: "Danh sách các tên miền cho phép (ví dụ: ['example.com', 'vinuni.edu.vn'])"
+          items:
+            type: string
+      required: [items, allowed_domains]
+
+  - name: source_audit
+    description: "Kiểm tra metadata trích dẫn của danh sách item: dùng trước khi trình bày digest để tìm item thiếu title hoặc URL HTTP(S) hợp lệ; không tải URL và không xác minh nội dung claim."
+    parameters:
+      type: object
+      properties:
+        items:
+          type: array
+          default: []
+          description: "Các item research cần kiểm tra; mỗi item có title và url, source/summary có thể đi kèm."
+          items:
+            type: object
+            properties:
+              title: {type: string}
+              url: {type: string}
+              source: {type: string}
+              summary: {type: string}
+      required: [items]
+
   - name: deduplicate_sources
     description: "Loại các item trùng URL khỏi danh sách nguồn. Giữ item xuất hiện đầu tiên và giữ nguyên thứ tự. Dùng sau khi đã thu thập nhiều nguồn; không dùng để tìm kiếm hoặc tải nội dung. Item không có URL được giữ nguyên."
     parameters:
@@ -131,6 +172,7 @@ tools:
       properties:
         items:
           type: array
+          default: []
           description: "Danh sách source items cần lọc"
           items:
             type: object
@@ -141,19 +183,27 @@ tools:
               summary: {type: string}
       required: [items]
 
-  - name: source_audit
-    description: "Kiểm tra metadata trích dẫn của danh sách item: dùng trước khi trình bày digest để tìm item thiếu title hoặc URL HTTP(S) hợp lệ; không tải URL và không xác minh nội dung claim."
+  - name: rank_sources
+    description: "Sắp xếp lại danh sách các bài viết đã thu thập theo mức độ trùng khớp từ khóa với câu truy vấn query (heuristic lexical overlap). Khi nào dùng: khi người dùng yêu cầu sắp xếp các bài viết đã tìm thấy theo độ liên quan tới một từ khóa hoặc chủ đề cụ thể, hoặc lấy top bài liên quan nhất. Khi nào không dùng: khi tìm kiếm bài mới trên internet."
     parameters:
       type: object
       properties:
         items:
           type: array
-          description: "Các item research cần kiểm tra; mỗi item có title và url, source/summary có thể đi kèm."
+          default: []
+          description: "Danh sách các bài viết cần sắp xếp"
           items:
             type: object
             properties:
-              title: {type: string}
               url: {type: string}
-              source: {type: string}
+              title: {type: string}
               summary: {type: string}
-      required: [items]
+        query:
+          type: string
+          default: ""
+          description: "Từ khóa hoặc câu truy vấn để tính điểm trùng lặp"
+        limit:
+          type: integer
+          default: 5
+          description: "Số lượng bài viết tối đa cần giữ lại sau khi sắp xếp"
+      required: [items, query]
