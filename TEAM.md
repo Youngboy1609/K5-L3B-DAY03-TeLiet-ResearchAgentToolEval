@@ -6,7 +6,7 @@
 - Lớp: L3B
 - Repo nhóm: K5-L3B-DAY03-TeLiet-ResearchAgentToolEval
 - URL repo: https://github.com/Youngboy1609/K5-L3B-DAY03-TeLiet-ResearchAgentToolEval
-- Nhánh nộp, commit chốt: main
+- Nhánh nộp: `main`; commit chốt nội dung CP5: `67a0d8cd54d44409e599149cb027fd8ed4bdb9fa` (merge commit PR #5).
 
 ## Thành viên
 
