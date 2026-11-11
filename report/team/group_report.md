@@ -13,7 +13,7 @@
 - Repo nhóm: K5-L3B-DAY03-TeLiet-ResearchAgentToolEval
 - URL repo: https://github.com/Youngboy1609/K5-L3B-DAY03-TeLiet-ResearchAgentToolEval
 - Thành viên và phân công: xem [TEAM.md](../../TEAM.md)
-- Provider/model dùng cho v0–v3: Google Gemini (`gemini-2.5-flash-lite`)
+- Provider/model dùng cho v0–v3: Google Gemini (`gemini-3.5-flash-lite`), theo metadata trong run JSON.
 
 ## 2. Mục tiêu và cách tiếp cận — PHẦN A: Giới thiệu agent
 
@@ -31,13 +31,13 @@ cd starter_v0
 streamlit run app.py
 ```
 
-**Link dùng thử (deploy):**
+**Link dùng thử:** Chưa có URL public/deploy để người ngoài nhóm mở. Có thể chạy UI local bằng lệnh dưới đây; khi tạo tunnel/deploy, thay dòng này bằng URL thực tế.
 
 Để chạy demo public an toàn bằng Cloudflare Tunnel (không để lộ Telegram token):
 ```bash
 cloudflared tunnel --url http://localhost:8501
 ```
-URL nội bộ: `http://localhost:8501`
+URL local: `http://localhost:8501` (không phải link public).
 
 ### A2. Tool agent có
 
@@ -135,13 +135,13 @@ Run OpenRouter v3: [JSON](../../starter_v0/runs/v3_B_group_openrouter_20261111T0
 
 ### B4. Live Chat Evidence
 
-Cấu trúc kịch bản hội thoại thực tế được lưu tại `starter_v0/transcripts/`:
+Hiện `starter_v0/transcripts/` chỉ có `.gitkeep`, chưa có transcript JSON để chứng minh live chat. Vì vậy ba kịch bản bên dưới là yêu cầu kiểm thử còn phải chạy, không phải lượt chat đã quan sát được:
 
-| Turn | User Request | Tool Calls | Version Evidence | Outcome |
-|---|---|---|---|---|
-| Turn 1 | "Tìm cho tôi tin tức AI mới nhất trên arXiv" | `papers(query='AI')` | v3 | Trả về danh sách bài báo trích dẫn đầy đủ |
-| Turn 2 | "Đọc các tweet mới nhất nhưng không nói rõ của ai" | `clarify(question='...')` | v3 | Agent hỏi lại handle thay vì tự ý gọi tool |
-| Turn 3 | "Đăng bản tin này lên Telegram của nhóm" | `clarify(response_type='yes_no')` | v3 | Agent xin xác nhận trước khi thực hiện hành động |
+| Required turn | Scenario to capture | Evidence status |
+|---|---|---|
+| Turn 1 | Yêu cầu research bình thường | Chưa có transcript |
+| Turn 2 | Yêu cầu thiếu thông tin, sau đó người dùng bổ sung | Chưa có transcript |
+| Turn 3 | Yêu cầu gửi/đăng và agent xin xác nhận trước | Chưa có transcript; public UI hiện loại tool `send` khỏi declarations |
 
 ### B5a. Required Evidence — Tool mới, unit test, UI
 
@@ -149,7 +149,7 @@ Cấu trúc kịch bản hội thoại thực tế được lưu tại `starter_
 |---|---|---|---|
 | Tool mới (`tools/<tên>/`) | `starter_v0/tools/domain_filter/tool.py`, `TOOL.md`; đăng ký tại `starter_v0/tools/__init__.py` và `starter_v0/artifacts/tools.yaml` | Lọc đúng domain và subdomain hợp lệ; loại bỏ URL giả mạo/lừa đảo; trả error dict an toàn khi sai kiểu input | Không xác minh độ tin cậy hoặc nội dung của trang web |
 | Unit test tool mới (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py` — `domain_filter`: 11 passed; `starter_v0/tests/test_tool_contract.py`: 77 passed | Bắt được subdomain lồng nhau, domain bẩn từ LLM, và lỗi input sai kiểu mà không crash agent | Đây là unit/contract tests, chưa chứng minh model tự route đúng tới tool |
-| UI (lệnh chạy + link dùng thử) | `starter_v0/app.py` | Lệnh chạy: `streamlit run app.py`; giao diện chat trực quan với Streamlit, hiển thị expander tool events | Giao diện demo công khai tự động ẩn credential và không kích hoạt tool `send` |
+| UI (lệnh chạy + link dùng thử) | `starter_v0/app.py` | Lệnh chạy local: `streamlit run app.py`; giao diện Streamlit hiển thị expander tool events | Chưa có URL public/deploy; UI bỏ credential Telegram khỏi môi trường và không đưa tool `send` vào declarations |
 
 Tool unit tests: Đã viết 11 unit tests chuyên biệt cho `domain_filter` trong `starter_v0/tests/test_tools_todo.py` (vượt qua 100%). Ví dụ lỗi mà unit test bắt được nhưng eval không bắt được: trường hợp URL giả mạo tinh vi như `example.com.evil.org` hoặc prefix spoofing `fake-example.com` được unit test chặn đứng tại tầng logic của tool.
 

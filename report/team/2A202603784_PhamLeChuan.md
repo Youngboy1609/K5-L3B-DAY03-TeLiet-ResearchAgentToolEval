@@ -40,7 +40,7 @@ Ví dụ: `20241234_NguyenVanAn.md`.
   - [v0 run](../../starter_v0/runs/v0_B_base_gemini_20261110T183708553548.json)
   - [v1 run](../../starter_v0/runs/v1_B_base_gemini_20261110T184719240561.json)
   - [v2 run](../../starter_v0/runs/v2_B_base_gemini_20261110T185133380730.json)
-  - [v3 run](../../starter_v0/runs/v3_B_base_gemini_20261110T185620920233.json)
+  - [v3 run hợp lệ](../../starter_v0/runs/v3_B_base_gemini_20261110T215643805698.json)
 
 - AI/công cụ đã dùng và cách tự kiểm tra kết quả:
   - Dùng Gemini cloud với model `gemini-3.5-flash-lite`.
@@ -56,7 +56,7 @@ Ví dụ: `20241234_NguyenVanAn.md`.
 | v0 | 13/20 | 0.65 | 0.80 | 0.65 | 0.6667 | 0 |
 | v1 | 14/20 | 0.70 | 0.95 | 0.70 | 0.5000 | 0 |
 | v2 | 16/20 | 0.80 | 1.00 | 0.80 | 0.8333 | 0 |
-| v3 | 15/19 | 0.7895 | 0.9474 | 0.7895 | 0.6667 | 1 |
+| v3 | 16/20 | 0.80 | 1.00 | 0.80 | 0.8333 | 0 |
 
 Các giả thuyết:
 
@@ -64,12 +64,11 @@ Các giả thuyết:
 - v2: quy tắc `clarify` khi thiếu thông tin sẽ giảm lỗi `missing_info`.
 - v3: quy tắc argument và confirmation boundary rõ hơn sẽ cải thiện argument/boundary.
 
-v3 có một `provider_error`, vì vậy không được so sánh như một run hoàn toàn hợp lệ
-với v0-v2 cho đến khi chạy lại thành công với `provider_error_cases=0`.
+Run v3 hợp lệ ở trên có 20/20 case được đo và 0 provider error. Các lần chạy v3
+trước đó có provider errors và không được dùng làm bằng chứng cuối.
 
 ## 5. Tự đánh giá
 
 - Hoàn thành phần tool mới và 3 unit test theo yêu cầu.
-- Kết quả tốt nhất trong các run hợp lệ là v2: `case_accuracy=0.80`,
-  `tool_routing_accuracy=1.00`, `argument_accuracy=0.80`.
-- Cần chạy lại v3 sau khi xử lý lỗi provider để có số liệu cuối cùng đáng tin cậy.
+- v2 và v3 cùng đạt `case_accuracy=0.80`, `tool_routing_accuracy=1.00`,
+  `argument_accuracy=0.80`; v3 là run cuối hợp lệ và có `provider_error_cases=0`.

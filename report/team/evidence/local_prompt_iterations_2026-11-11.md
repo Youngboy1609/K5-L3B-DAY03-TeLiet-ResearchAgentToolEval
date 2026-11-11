@@ -6,9 +6,9 @@ Canonical v4/v5 runs use the same 20 cases in `starter_v0/data/eval_base.json`, 
 
 | Version | Prompt artifact | Hypothesis | Case accuracy | Tool routing | Arguments | Multiturn | Run |
 |---|---|---|---:|---:|---:|---:|---|
-| v3 baseline | `artifacts/system_prompt.md` | Baseline before local optimization | 0.35 | 0.60 | 0.35 | 0.50 | [run JSON](../../starter_v0/runs/v3-qwen2.5-3b_B_base_ollama_20261111T000647728345.json) |
-| v4-local | `artifacts/system_prompt_v4_local.md` | An ordered routing map with account-vs-topic distinctions reduces wrong tools | 0.65 | 0.75 | 0.65 | 0.6667 | [run JSON](../../starter_v0/runs/v4-local-qwen2.5-3b_B_base_ollama_20261111T005614499549.json) |
-| v5-local | `artifacts/system_prompt_v5_local.md` | Explicit clarify, intent-switch, argument-type, and confirmation examples improve full-case and argument accuracy | 0.65 | 0.65 | 0.65 | 0.3333 | [run JSON](../../starter_v0/runs/v5-local-qwen2.5-3b_B_base_ollama_20261111T005631827068.json) |
+| v3 baseline | `artifacts/system_prompt.md` | Baseline before local optimization | 0.35 | 0.60 | 0.35 | 0.50 | [run JSON](../../../starter_v0/runs/v3-qwen2.5-3b_B_base_ollama_20261111T000647728345.json) |
+| v4-local | `artifacts/system_prompt_v4_local.md` | An ordered routing map with account-vs-topic distinctions reduces wrong tools | 0.65 | 0.75 | 0.65 | 0.6667 | [run JSON](../../../starter_v0/runs/v4-local-qwen2.5-3b_B_base_ollama_20261111T005614499549.json) |
+| v5-local | `artifacts/system_prompt_v5_local.md` | Explicit clarify, intent-switch, argument-type, and confirmation examples improve full-case and argument accuracy | 0.65 | 0.65 | 0.65 | 0.3333 | [run JSON](../../../starter_v0/runs/v5-local-qwen2.5-3b_B_base_ollama_20261111T005631827068.json) |
 
 ## What changed
 

@@ -12,8 +12,8 @@
 
 | Model | Passed | Case accuracy | Tool routing | Arguments | Multiturn | Provider errors | Run JSON |
 |---|---:|---:|---:|---:|---:|---:|---|
-| `qwen2.5:3b` | 7/20 | 0.35 | 0.60 | 0.35 | 0.50 | 0 | [run](../../starter_v0/runs/v3-qwen2.5-3b_B_base_ollama_20261111T000647728345.json) |
-| `llama3.2:3b` | 5/20 | 0.25 | 0.45 | 0.25 | 0.1667 | 0 | [run](../../starter_v0/runs/v3-llama3.2-3b_B_base_ollama_20261111T001334521498.json) |
+| `qwen2.5:3b` | 7/20 | 0.35 | 0.60 | 0.35 | 0.50 | 0 | [run](../../../starter_v0/runs/v3-qwen2.5-3b_B_base_ollama_20261111T000647728345.json) |
+| `llama3.2:3b` | 5/20 | 0.25 | 0.45 | 0.25 | 0.1667 | 0 | [run](../../../starter_v0/runs/v3-llama3.2-3b_B_base_ollama_20261111T001334521498.json) |
 
 ## Failure classification
 
