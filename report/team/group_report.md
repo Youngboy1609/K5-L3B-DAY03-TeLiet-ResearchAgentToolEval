@@ -198,7 +198,7 @@ Chi tiết đóng góp của thành viên:
 - [Hồ Trọng Nghĩa (2A202603729)](2A202603729_HoTrongNghia.md) — `source_audit`, tích hợp tool và benchmark model local.
 - [Phạm Lê Chuẩn (2A202603784)](2A202603784_PhamLeChuan.md) — `deduplicate_sources`, tối ưu prompt và eval cloud v0–v3.
 - [Nguyễn Minh Quân (2A202603747)](2A202603747_NguyenMinhQuan.md) — `rank_sources`, UI Streamlit và live demo.
-- [Phạm Đăng Quang (2A202603760)](2A202603760_PhamDangQuang.md)
+- [Phạm Đăng Quang (2A202603760)](2A202603760_PhamDangQuang.md) — `domain_filter`, 10 eval case nhóm và unit tests.
 
 ## 7. Hạn chế và hướng cải thiện — B6. Reflection
 
