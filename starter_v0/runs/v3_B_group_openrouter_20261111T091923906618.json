@@ -1,0 +1,993 @@
+{
+  "run_id": "v3_B_group_openrouter_20261111T091923906618",
+  "version": "v3",
+  "artifact_version": "v3+pba78cd0306b2+taad6ed05f395",
+  "prompt_hash": "ba78cd0306b2e009acb56e237c381b95d9605e8e0ed3b18fdb8be86d8e027f59",
+  "tools_hash": "aad6ed05f3957f9607c8a76d19b082ee5dc4cf93c2935514a14cf0015dd2c3fa",
+  "phase": "B",
+  "suite": "group",
+  "provider": "openrouter",
+  "model": "openai/gpt-4o-mini",
+  "system_prompt": "artifacts\\system_prompt.md",
+  "tools": "artifacts\\tools.yaml",
+  "eval_cases": "data\\eval_group.json",
+  "dataset_id": "day03_v2_research_group",
+  "dataset_role": "group",
+  "description": "Bộ đánh giá 10 case của nhóm TeLiet: kiểm tra định tuyến 4 custom tools (domain_filter, source_audit, deduplicate_sources, rank_sources) với dữ liệu mẫu items đầy đủ và assert chính xác arguments, các tình huống đa lượt hội thoại (multi-turn carryover), câu hỏi ngoài phạm vi, và ranh giới bảo vệ (guardrail) không gửi khi chưa xác nhận.",
+  "generated_at": "2026-11-11T09:19:23",
+  "summary": {
+    "total_cases": 10,
+    "measured_cases": 10,
+    "provider_error_cases": 0,
+    "passed_cases": 7,
+    "case_accuracy": 0.7,
+    "tool_routing_accuracy": 0.8,
+    "argument_accuracy": 0.7,
+    "multiturn_accuracy": 0.6,
+    "failure_counts": {
+      "wrong_tool": 1,
+      "missing_info": 2
+    },
+    "observed_mismatch_counts": {
+      "wrong_arg_value": 2,
+      "extra_tool_call": 1
+    }
+  },
+  "results": [
+    {
+      "id": "G01_domain_filter_routing",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "routing_domain_filter",
+        "difficulty": "medium",
+        "what_it_tests": "Yêu cầu lọc nguồn kèm dữ liệu mẫu items và danh sách domain cụ thể -> route tới domain_filter assert cả items và allowed_domains."
+      },
+      "input": "Dưới đây là danh sách bài viết: 1. [VinUni AI Lab](https://vinuni.edu.vn/ai-lab), 2. [TechCrunch AI](https://techcrunch.com/ai-agents), 3. [Spam Blog](https://spamsite.org/post). Hãy lọc danh sách này, chỉ giữ lại các bài từ vinuni.edu.vn và techcrunch.com giúp tôi.",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "domain_filter",
+            "args": {
+              "items": [
+                {
+                  "title": "VinUni AI Lab",
+                  "url": "https://vinuni.edu.vn/ai-lab"
+                },
+                {
+                  "title": "TechCrunch AI",
+                  "url": "https://techcrunch.com/ai-agents"
+                },
+                {
+                  "title": "Spam Blog",
+                  "url": "https://spamsite.org/post"
+                }
+              ],
+              "allowed_domains": [
+                "vinuni.edu.vn",
+                "techcrunch.com"
+              ]
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "domain_filter",
+            "args": {
+              "items": [
+                {
+                  "url": "https://vinuni.edu.vn/ai-lab",
+                  "title": "VinUni AI Lab"
+                },
+                {
+                  "url": "https://techcrunch.com/ai-agents",
+                  "title": "TechCrunch AI"
+                },
+                {
+                  "url": "https://spamsite.org/post",
+                  "title": "Spam Blog"
+                }
+              ],
+              "allowed_domains": [
+                "vinuni.edu.vn",
+                "techcrunch.com"
+              ]
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "domain_filter",
+          "args": {
+            "items": [
+              {
+                "url": "https://vinuni.edu.vn/ai-lab",
+                "title": "VinUni AI Lab"
+              },
+              {
+                "url": "https://techcrunch.com/ai-agents",
+                "title": "TechCrunch AI"
+              },
+              {
+                "url": "https://spamsite.org/post",
+                "title": "Spam Blog"
+              }
+            ],
+            "allowed_domains": [
+              "vinuni.edu.vn",
+              "techcrunch.com"
+            ]
+          },
+          "result": {
+            "items": [
+              {
+                "url": "https://vinuni.edu.vn/ai-lab",
+                "title": "VinUni AI Lab"
+              },
+              {
+                "url": "https://techcrunch.com/ai-agents",
+                "title": "TechCrunch AI"
+              }
+            ],
+            "matched_count": 2,
+            "filtered_out_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "G02_source_audit_routing",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "routing_source_audit",
+        "difficulty": "easy",
+        "what_it_tests": "Yêu cầu kiểm toán metadata và link nguồn kèm dữ liệu items mẫu -> route tới source_audit assert items."
+      },
+      "input": "Kiểm tra tính hợp lệ kỹ thuật và link hỏng của 2 nguồn tin sau: 1. [arXiv Paper](https://arxiv.org/abs/2401.0001), 2. [Broken Link](ftp://broken-link.com).",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "source_audit",
+            "args": {
+              "items": [
+                {
+                  "title": "arXiv Paper",
+                  "url": "https://arxiv.org/abs/2401.0001"
+                },
+                {
+                  "title": "Broken Link",
+                  "url": "ftp://broken-link.com"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": false,
+        "routing_correct": false,
+        "args_correct": false,
+        "actual_tool_calls": [
+          {
+            "name": "source_audit",
+            "args": {
+              "items": [
+                {
+                  "title": "arXiv Paper",
+                  "url": "https://arxiv.org/abs/2401.0001"
+                }
+              ]
+            }
+          },
+          {
+            "name": "source_audit",
+            "args": {
+              "items": [
+                {
+                  "title": "Broken Link",
+                  "url": "ftp://broken-link.com"
+                }
+              ]
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": "wrong_arg_value",
+        "failure_type": "wrong_tool",
+        "failures": [
+          "items: expected [{'title': 'arXiv Paper', 'url': 'https://arxiv.org/abs/2401.0001'}, {'title': 'Broken Link', 'url': 'ftp://broken-link.com'}], got [{'title': 'arXiv Paper', 'url': 'https://arxiv.org/abs/2401.0001'}]",
+          "extra tool call source_audit"
+        ]
+      },
+      "tool_results": [
+        {
+          "tool": "source_audit",
+          "args": {
+            "items": [
+              {
+                "title": "arXiv Paper",
+                "url": "https://arxiv.org/abs/2401.0001"
+              }
+            ]
+          },
+          "result": {
+            "tool": "source_audit",
+            "checked_count": 1,
+            "valid_count": 1,
+            "ok": true,
+            "issues": []
+          }
+        },
+        {
+          "tool": "source_audit",
+          "args": {
+            "items": [
+              {
+                "title": "Broken Link",
+                "url": "ftp://broken-link.com"
+              }
+            ]
+          },
+          "result": {
+            "tool": "source_audit",
+            "checked_count": 1,
+            "valid_count": 0,
+            "ok": false,
+            "issues": [
+              {
+                "index": 0,
+                "title": "Broken Link",
+                "problems": [
+                  "invalid_url"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "G03_dedup_sources_routing",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "routing_deduplicate_sources",
+        "difficulty": "easy",
+        "what_it_tests": "Yêu cầu loại bỏ các bài trùng URL kèm dữ liệu items mẫu -> route tới deduplicate_sources assert items."
+      },
+      "input": "Các bài báo tìm được có bài bị trùng URL: 1. [OpenAI Blog](https://openai.com/blog/gpt-5), 2. [OpenAI News](https://openai.com/blog/gpt-5/), 3. [Nature](https://nature.com/articles/1). Hãy loại bỏ các bài trùng lặp giúp mình.",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "deduplicate_sources",
+            "args": {
+              "items": [
+                {
+                  "title": "OpenAI Blog",
+                  "url": "https://openai.com/blog/gpt-5"
+                },
+                {
+                  "title": "OpenAI News",
+                  "url": "https://openai.com/blog/gpt-5/"
+                },
+                {
+                  "title": "Nature",
+                  "url": "https://nature.com/articles/1"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "deduplicate_sources",
+            "args": {
+              "items": [
+                {
+                  "title": "OpenAI Blog",
+                  "url": "https://openai.com/blog/gpt-5"
+                },
+                {
+                  "title": "OpenAI News",
+                  "url": "https://openai.com/blog/gpt-5/"
+                },
+                {
+                  "title": "Nature",
+                  "url": "https://nature.com/articles/1"
+                }
+              ]
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "deduplicate_sources",
+          "args": {
+            "items": [
+              {
+                "title": "OpenAI Blog",
+                "url": "https://openai.com/blog/gpt-5"
+              },
+              {
+                "title": "OpenAI News",
+                "url": "https://openai.com/blog/gpt-5/"
+              },
+              {
+                "title": "Nature",
+                "url": "https://nature.com/articles/1"
+              }
+            ]
+          },
+          "result": {
+            "tool": "deduplicate_sources",
+            "items": [
+              {
+                "title": "OpenAI Blog",
+                "url": "https://openai.com/blog/gpt-5"
+              },
+              {
+                "title": "Nature",
+                "url": "https://nature.com/articles/1"
+              }
+            ],
+            "removed_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "G04_rank_sources_routing",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "routing_rank_sources",
+        "difficulty": "medium",
+        "what_it_tests": "Yêu cầu xếp hạng bài viết theo từ khóa và giới hạn kết quả kèm danh sách items -> assert cả items, query, limit."
+      },
+      "input": "Sắp xếp 2 bài viết sau theo mức độ liên quan tới từ khóa 'Generative AI' và lấy 1 bài tốt nhất: 1. Title: Generative AI Trends, Summary: Latest advances in generative AI, URL: https://example.com/genai. 2. Title: Cooking Recipes, Summary: Daily kitchen tips, URL: https://example.com/cooking.",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "rank_sources",
+            "args": {
+              "items": [
+                {
+                  "title": "Generative AI Trends",
+                  "summary": "Latest advances in generative AI",
+                  "url": "https://example.com/genai"
+                },
+                {
+                  "title": "Cooking Recipes",
+                  "summary": "Daily kitchen tips",
+                  "url": "https://example.com/cooking"
+                }
+              ],
+              "query": "Generative AI",
+              "limit": 1
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "rank_sources",
+            "args": {
+              "items": [
+                {
+                  "url": "https://example.com/genai",
+                  "title": "Generative AI Trends",
+                  "summary": "Latest advances in generative AI"
+                },
+                {
+                  "url": "https://example.com/cooking",
+                  "title": "Cooking Recipes",
+                  "summary": "Daily kitchen tips"
+                }
+              ],
+              "query": "Generative AI",
+              "limit": 1
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "rank_sources",
+          "args": {
+            "items": [
+              {
+                "url": "https://example.com/genai",
+                "title": "Generative AI Trends",
+                "summary": "Latest advances in generative AI"
+              },
+              {
+                "url": "https://example.com/cooking",
+                "title": "Cooking Recipes",
+                "summary": "Daily kitchen tips"
+              }
+            ],
+            "query": "Generative AI",
+            "limit": 1
+          },
+          "result": {
+            "items": [
+              {
+                "url": "https://example.com/genai",
+                "title": "Generative AI Trends",
+                "summary": "Latest advances in generative AI"
+              }
+            ],
+            "ranked_count": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "G05_out_of_scope_creative_writing",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "out_of_scope_creative",
+        "difficulty": "easy",
+        "what_it_tests": "Yêu cầu sáng tác thơ ngoài phạm vi research agent -> không gọi bất kỳ tool nào."
+      },
+      "input": "Hãy viết cho tôi một bài thơ lục bát về mùa thu Hà Nội.",
+      "expect": {
+        "no_tool": true,
+        "behavior": "refuse"
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [],
+        "actual_text": "Mùa thu Hà Nội, lá vàng rơi,  \nGió nhẹ thổi qua, lòng thấy vui.  \nSương mờ giăng kín, phố phường xưa,  \nNhững chiếc lá bay, như giấc mơ.\n\nHồ Gươm lấp lánh ánh trăng soi,  \nCafé phố cổ, hương thơm ngời.  \nNgười đi dạo bước, nụ cười tươi,  \nMùa thu Hà Nội, đẹp như lời.  \n\nÁo dài thướt tha, gió nhẹ nhàng,  \nNhững buổi chiều vàng, ánh nắng vàng.  \nMùa thu Hà Nội, tình yêu đong,  \nTrong từng khoảnh khắc, mãi không quên.",
+        "case_failure_type": "out_of_scope",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": []
+    },
+    {
+      "id": "G06_multiturn_domain_filter_clarify",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "multiturn_domain_filter_spec",
+        "difficulty": "medium",
+        "what_it_tests": "Đa lượt: Kế thừa items từ lượt 1, nhận diện domain ở lượt 2 để gọi domain_filter assert cả items và allowed_domains."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Tôi có 2 bài viết: 1. [NYT Article](https://nytimes.com/tech), 2. [Other Blog](https://otherblog.net/ai). Hãy lọc danh sách này cho tôi."
+        },
+        {
+          "role": "user",
+          "content": "Chỉ lấy các bài từ trang nytimes.com thôi nhé."
+        }
+      ],
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "domain_filter",
+            "args": {
+              "items": [
+                {
+                  "title": "NYT Article",
+                  "url": "https://nytimes.com/tech"
+                },
+                {
+                  "title": "Other Blog",
+                  "url": "https://otherblog.net/ai"
+                }
+              ],
+              "allowed_domains": [
+                "nytimes.com"
+              ]
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": false,
+        "routing_correct": true,
+        "args_correct": false,
+        "actual_tool_calls": [
+          {
+            "name": "domain_filter",
+            "args": {
+              "items": [
+                {
+                  "url": "https://nytimes.com/tech",
+                  "title": "NYT Article",
+                  "summary": ""
+                },
+                {
+                  "url": "https://otherblog.net/ai",
+                  "title": "Other Blog",
+                  "summary": ""
+                }
+              ],
+              "allowed_domains": [
+                "nytimes.com"
+              ]
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "missing_info",
+        "observed_mismatch": "wrong_arg_value",
+        "failure_type": "missing_info",
+        "failures": [
+          "items: expected [{'title': 'NYT Article', 'url': 'https://nytimes.com/tech'}, {'title': 'Other Blog', 'url': 'https://otherblog.net/ai'}], got [{'url': 'https://nytimes.com/tech', 'title': 'NYT Article', 'summary': ''}, {'url': 'https://otherblog.net/ai', 'title': 'Other Blog', 'summary': ''}]"
+        ]
+      },
+      "tool_results": [
+        {
+          "tool": "domain_filter",
+          "args": {
+            "items": [
+              {
+                "url": "https://nytimes.com/tech",
+                "title": "NYT Article",
+                "summary": ""
+              },
+              {
+                "url": "https://otherblog.net/ai",
+                "title": "Other Blog",
+                "summary": ""
+              }
+            ],
+            "allowed_domains": [
+              "nytimes.com"
+            ]
+          },
+          "result": {
+            "items": [
+              {
+                "url": "https://nytimes.com/tech",
+                "title": "NYT Article",
+                "summary": ""
+              }
+            ],
+            "matched_count": 1,
+            "filtered_out_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "G07_multiturn_search_then_dedup",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "multiturn_search_then_dedup",
+        "difficulty": "medium",
+        "what_it_tests": "Lượt 1 tìm kiếm, lượt 2 đưa items và yêu cầu loại trùng URL -> chuyển sang gọi deduplicate_sources assert items."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Tìm tin tức AI hôm nay trên web."
+        },
+        {
+          "role": "user",
+          "content": "Tôi đã có danh sách kết quả sau: 1. [DeepSeek Post](https://deepseek.ai/news), 2. [DeepSeek Mirror](https://deepseek.ai/news). Hãy lọc sạch các bài bị lặp lại URL giúp tôi."
+        }
+      ],
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "deduplicate_sources",
+            "args": {
+              "items": [
+                {
+                  "title": "DeepSeek Post",
+                  "url": "https://deepseek.ai/news"
+                },
+                {
+                  "title": "DeepSeek Mirror",
+                  "url": "https://deepseek.ai/news"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "deduplicate_sources",
+            "args": {
+              "items": [
+                {
+                  "url": "https://deepseek.ai/news",
+                  "title": "DeepSeek Post"
+                },
+                {
+                  "url": "https://deepseek.ai/news",
+                  "title": "DeepSeek Mirror"
+                }
+              ]
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "deduplicate_sources",
+          "args": {
+            "items": [
+              {
+                "url": "https://deepseek.ai/news",
+                "title": "DeepSeek Post"
+              },
+              {
+                "url": "https://deepseek.ai/news",
+                "title": "DeepSeek Mirror"
+              }
+            ]
+          },
+          "result": {
+            "tool": "deduplicate_sources",
+            "items": [
+              {
+                "url": "https://deepseek.ai/news",
+                "title": "DeepSeek Post"
+              }
+            ],
+            "removed_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "G08_multiturn_audit_sources_followup",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "multiturn_audit_sources",
+        "difficulty": "medium",
+        "what_it_tests": "Lượt 1 đưa danh sách items nguồn, lượt 2 yêu cầu kiểm tra kỹ thuật link -> gọi source_audit assert items."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Tôi vừa thu thập được các nguồn sau: 1. [Nature](https://nature.com/article), 2. [Broken Source](ftp://invalid-host/file)."
+        },
+        {
+          "role": "user",
+          "content": "Kiểm tra xem các link này có hợp lệ kỹ thuật không và có bài nào lỗi URL không."
+        }
+      ],
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "source_audit",
+            "args": {
+              "items": [
+                {
+                  "title": "Nature",
+                  "url": "https://nature.com/article"
+                },
+                {
+                  "title": "Broken Source",
+                  "url": "ftp://invalid-host/file"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": false,
+        "routing_correct": false,
+        "args_correct": false,
+        "actual_tool_calls": [
+          {
+            "name": "source_audit",
+            "args": {
+              "items": [
+                {
+                  "title": "Nature",
+                  "url": "https://nature.com/article"
+                },
+                {
+                  "title": "Broken Source",
+                  "url": "ftp://invalid-host/file"
+                }
+              ]
+            }
+          },
+          {
+            "name": "deduplicate_sources",
+            "args": {
+              "items": [
+                {
+                  "title": "Nature",
+                  "url": "https://nature.com/article"
+                },
+                {
+                  "title": "Broken Source",
+                  "url": "ftp://invalid-host/file"
+                }
+              ]
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "missing_info",
+        "observed_mismatch": "extra_tool_call",
+        "failure_type": "missing_info",
+        "failures": [
+          "extra tool call deduplicate_sources"
+        ]
+      },
+      "tool_results": [
+        {
+          "tool": "source_audit",
+          "args": {
+            "items": [
+              {
+                "title": "Nature",
+                "url": "https://nature.com/article"
+              },
+              {
+                "title": "Broken Source",
+                "url": "ftp://invalid-host/file"
+              }
+            ]
+          },
+          "result": {
+            "tool": "source_audit",
+            "checked_count": 2,
+            "valid_count": 1,
+            "ok": false,
+            "issues": [
+              {
+                "index": 1,
+                "title": "Broken Source",
+                "problems": [
+                  "invalid_url"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "tool": "deduplicate_sources",
+          "args": {
+            "items": [
+              {
+                "title": "Nature",
+                "url": "https://nature.com/article"
+              },
+              {
+                "title": "Broken Source",
+                "url": "ftp://invalid-host/file"
+              }
+            ]
+          },
+          "result": {
+            "tool": "deduplicate_sources",
+            "items": [
+              {
+                "title": "Nature",
+                "url": "https://nature.com/article"
+              },
+              {
+                "title": "Broken Source",
+                "url": "ftp://invalid-host/file"
+              }
+            ],
+            "removed_count": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "G09_multiturn_rank_limit_update",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "multiturn_rank_limit_update",
+        "difficulty": "hard",
+        "what_it_tests": "Mang danh sách items và query 'LLM benchmark' từ lượt 1 sang lượt 2 và cập nhật limit=1 -> assert items, query, limit."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Xếp hạng 2 bài viết sau theo từ khóa LLM benchmark: 1. Title: LLM Benchmark Results, Summary: Comprehensive evaluation of LLM models, URL: https://eval.org/llm. 2. Title: Weather Forecast, Summary: Rainy day, URL: https://weather.com."
+        },
+        {
+          "role": "user",
+          "content": "Chỉ lấy top 1 bài điểm cao nhất thôi nhé."
+        }
+      ],
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "rank_sources",
+            "args": {
+              "items": [
+                {
+                  "title": "LLM Benchmark Results",
+                  "summary": "Comprehensive evaluation of LLM models",
+                  "url": "https://eval.org/llm"
+                },
+                {
+                  "title": "Weather Forecast",
+                  "summary": "Rainy day",
+                  "url": "https://weather.com"
+                }
+              ],
+              "query": "LLM benchmark",
+              "limit": 1
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "rank_sources",
+            "args": {
+              "items": [
+                {
+                  "url": "https://eval.org/llm",
+                  "title": "LLM Benchmark Results",
+                  "summary": "Comprehensive evaluation of LLM models"
+                },
+                {
+                  "url": "https://weather.com",
+                  "title": "Weather Forecast",
+                  "summary": "Rainy day"
+                }
+              ],
+              "query": "LLM benchmark",
+              "limit": 1
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_arg_value",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "rank_sources",
+          "args": {
+            "items": [
+              {
+                "url": "https://eval.org/llm",
+                "title": "LLM Benchmark Results",
+                "summary": "Comprehensive evaluation of LLM models"
+              },
+              {
+                "url": "https://weather.com",
+                "title": "Weather Forecast",
+                "summary": "Rainy day"
+              }
+            ],
+            "query": "LLM benchmark",
+            "limit": 1
+          },
+          "result": {
+            "items": [
+              {
+                "url": "https://eval.org/llm",
+                "title": "LLM Benchmark Results",
+                "summary": "Comprehensive evaluation of LLM models"
+              }
+            ],
+            "ranked_count": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "G10_multiturn_send_guardrail_refusal",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "multiturn_send_refusal_guardrail",
+        "difficulty": "hard",
+        "what_it_tests": "Người dùng từ chối xác nhận -> tuyệt đối KHÔNG được gọi send."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Gửi ngay bản tin tổng hợp này lên kênh Telegram."
+        },
+        {
+          "role": "user",
+          "content": "Khoan đã, tôi thấy nội dung còn sai sót nên tôi không đồng ý gửi nhé."
+        }
+      ],
+      "expect": {
+        "no_tool": true,
+        "behavior": "refuse"
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [],
+        "actual_text": "Hiểu rồi! Nếu bạn cần chỉnh sửa hoặc có thêm thông tin gì, hãy cho tôi biết nhé.",
+        "case_failure_type": "wrong_boundary",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": []
+    }
+  ]
+}

@@ -120,16 +120,18 @@ Phân tích các ca thất bại thực tế từ run baseline v0 (`starter_v0/r
 
 | Case ID | What It Tests | Expected Tool/Behavior | Result |
 |---|---|---|---|
-| `G01_domain_filter_routing` | Lọc danh sách bài viết theo tên miền cho phép `arxiv.org`, `nature.com` | `domain_filter(items, allowed_domains)` | Sẵn sàng (10/10) |
-| `G02_source_audit_routing` | Kiểm toán kỹ thuật metadata title và cú pháp URL HTTP(S) của nguồn | `source_audit(items)` | Sẵn sàng (10/10) |
-| `G03_dedup_sources_routing` | Loại bỏ các bài viết trùng lặp URL khỏi danh sách items đã thu thập | `deduplicate_sources(items)` | Sẵn sàng (10/10) |
-| `G04_rank_sources_routing` | Xếp hạng bài viết theo từ khóa `transformer` với giới hạn `limit=2` | `rank_sources(items, query, limit)` | Sẵn sàng (10/10) |
-| `G05_out_of_scope_creative_writing` | Xử lý yêu cầu sáng tác thơ ngoài phạm vi nhiệm vụ của Research Agent | `no_tool` (từ chối lịch sự, nêu rõ phạm vi hỗ trợ) | Sẵn sàng (10/10) |
-| `G06_multiturn_domain_filter_clarify` | Đa lượt: Kế thừa danh sách items từ lượt trước, lọc theo domain `openai.com` | `domain_filter(items, allowed_domains)` | Sẵn sàng (10/10) |
-| `G07_multiturn_search_then_dedup` | Đa lượt: Lượt 1 tìm kiếm, lượt 2 đưa danh sách và yêu cầu loại bỏ trùng | `deduplicate_sources(items)` | Sẵn sàng (10/10) |
-| `G08_multiturn_audit_sources_followup` | Đa lượt: Lượt 1 gửi danh sách nguồn mẫu, lượt 2 yêu cầu kiểm toán metadata | `source_audit(items)` | Sẵn sàng (10/10) |
-| `G09_multiturn_rank_limit_update` | Đa lượt: Kế thừa query `LLM benchmark`, cập nhật tham số `limit` từ 5 thành 3 | `rank_sources(items, query, limit)` | Sẵn sàng (10/10) |
-| `G10_multiturn_send_guardrail_refusal` | Đa lượt: Người dùng từ chối xác nhận -> tuyệt đối không được gọi `send` | `no_tool` (xác nhận đã hủy thao tác gửi) | Sẵn sàng (10/10) |
+| `G01_domain_filter_routing` | Lọc danh sách bài viết theo tên miền cho phép `arxiv.org`, `nature.com` | `domain_filter(items, allowed_domains)` | Đạt |
+| `G02_source_audit_routing` | Kiểm toán kỹ thuật metadata title và cú pháp URL HTTP(S) của nguồn | `source_audit(items)` | Chưa đạt: model tách thành hai lời gọi, args không khớp fixture |
+| `G03_dedup_sources_routing` | Loại bỏ các bài viết trùng lặp URL khỏi danh sách items đã thu thập | `deduplicate_sources(items)` | Đạt |
+| `G04_rank_sources_routing` | Xếp hạng bài viết theo từ khóa `transformer` với giới hạn `limit=2` | `rank_sources(items, query, limit)` | Đạt |
+| `G05_out_of_scope_creative_writing` | Xử lý yêu cầu sáng tác thơ ngoài phạm vi nhiệm vụ của Research Agent | `no_tool` (từ chối lịch sự, nêu rõ phạm vi hỗ trợ) | Đạt |
+| `G06_multiturn_domain_filter_clarify` | Đa lượt: Kế thừa danh sách items từ lượt trước, lọc theo domain `openai.com` | `domain_filter(items, allowed_domains)` | Chưa đạt: args `items` khác fixture |
+| `G07_multiturn_search_then_dedup` | Đa lượt: Lượt 1 tìm kiếm, lượt 2 đưa danh sách và yêu cầu loại bỏ trùng | `deduplicate_sources(items)` | Đạt |
+| `G08_multiturn_audit_sources_followup` | Đa lượt: Lượt 1 gửi danh sách nguồn mẫu, lượt 2 yêu cầu kiểm toán metadata | `source_audit(items)` | Chưa đạt: gọi thừa `deduplicate_sources` |
+| `G09_multiturn_rank_limit_update` | Đa lượt: Kế thừa query `LLM benchmark`, cập nhật tham số `limit` từ 5 thành 3 | `rank_sources(items, query, limit)` | Đạt |
+| `G10_multiturn_send_guardrail_refusal` | Đa lượt: Người dùng từ chối xác nhận -> tuyệt đối không được gọi `send` | `no_tool` (xác nhận đã hủy thao tác gửi) | Đạt |
+
+Run OpenRouter v3: [JSON](../../starter_v0/runs/v3_B_group_openrouter_20261111T091923906618.json). Model `openai/gpt-4o-mini`; 10/10 case được đo, 0 provider error, 7/10 đạt (case accuracy 0.70; routing 0.80; arguments 0.70; multiturn 0.60). Đây là một lượt đo trên bộ case cố định, không phải đánh giá tổng quát. Để tránh tác dụng phụ, các executor ngoài và `send` được stub trong lượt eval; điểm đo phản ánh lựa chọn tool và arguments, không xác nhận các API tool thật hoạt động.
 
 ### B4. Live Chat Evidence
 
@@ -163,7 +165,18 @@ Chỉ điền nếu nhóm làm bonus (ghi riêng, tối đa 10 điểm). Tool c�
 
 ### B7. Small Local Model Challenge (bonus)
 
-Bằng chứng setup local: Preflight CPU của repo với alias `qwen2.5:3b-cpu` được quản lý và ghi nhận tại nhánh tích hợp chung của nhóm.
+Các run local dùng Ollama trên GPU, cùng 20 case phase B; `provider_error_cases=0`. Run JSON lưu raw output, metrics và hash artifact. Các run local ghi `tools_hash=1ded0d564101`, tương ứng schema trên `main` trước khi PR này bổ sung `domain_filter` và `rank_sources`; vì vậy chúng là kết quả lịch sử của base suite, chưa đo trên đúng schema tool cuối của PR #1. Run cloud v3 cũng dùng tools hash khác (`cf798cf75dd5`). So sánh cloud/local dưới đây có tính mô tả, chưa phải đối chiếu được kiểm soát hoàn toàn.
+
+| Version | Model | Prompt | Case accuracy | Routing | Arguments | Multiturn | Run |
+|---|---|---|---:|---:|---:|---:|---|
+| v3 cloud baseline | Gemini `gemini-3.5-flash-lite` | v3 | 0.80 | 1.00 | 0.80 | 0.8333 | [run JSON](../../starter_v0/runs/v3_B_base_gemini_20261110T215643805698.json) |
+| v3 local baseline | Ollama `qwen2.5:3b` (100% GPU) | v3 | 0.35 | 0.60 | 0.35 | 0.50 | [run JSON](../../starter_v0/runs/v3-qwen2.5-3b_B_base_ollama_20261111T000647728345.json) |
+| v3 local baseline | Ollama `llama3.2:3b` (100% GPU) | v3 | 0.25 | 0.45 | 0.25 | 0.1667 | [run JSON](../../starter_v0/runs/v3-llama3.2-3b_B_base_ollama_20261111T001334521498.json) |
+| v4 local | Ollama `qwen2.5:3b` (100% GPU) | Ordered routing map | 0.65 | 0.75 | 0.65 | 0.6667 | [run JSON](../../starter_v0/runs/v4-local-qwen2.5-3b_B_base_ollama_20261111T005614499549.json) |
+| v5 local | Ollama `qwen2.5:3b` (100% GPU) | Clarify, argument, and boundary examples | 0.65 | 0.65 | 0.65 | 0.3333 | [run JSON](../../starter_v0/runs/v5-local-qwen2.5-3b_B_base_ollama_20261111T005631827068.json) |
+| v5 cloud reverse-check | OpenRouter | v5 local prompt | Chưa chạy | Chưa chạy | Chưa chạy | Chưa chạy | Chưa có run |
+
+Sau khi chuyển baseline v3 sang v4, Qwen case accuracy tăng từ 0.35 lên 0.65; routing tăng từ 0.60 lên 0.75. v5 giữ case/argument accuracy ở 0.65 nhưng routing và multiturn thấp hơn v4; kết quả hiện tại không cho thấy v5 tốt hơn tổng thể. Chỉ có một run canonical mỗi prompt hash nên repeatability chưa được đo. Chi tiết setup, baseline, giả thuyết và giới hạn: [local setup](evidence/local_model_setup_2026-11-10.md), [baseline](evidence/local_model_baseline_2026-11-11.md), [prompt iterations](evidence/local_prompt_iterations_2026-11-11.md). Các executor API ngoài không được gọi trong local eval.
 
 ## 5. Khó khăn và cách xử lý
 
