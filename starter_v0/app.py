@@ -4,6 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from chat import run_model_tool_loop
+from demo_access import is_valid_public_demo_code, user_facing_error
 from env_loader import load_lab_env
 from providers import make_provider
 from tools import load_tool_declarations, to_openai_tools
@@ -15,6 +16,34 @@ load_lab_env(ROOT)
 os.environ.pop("TELEGRAM_BOT_TOKEN", None)
 os.environ.pop("TELEGRAM_CHAT_ID", None)
 st.set_page_config(page_title="Research Agent", page_icon="🔎")
+
+public_demo = os.getenv("PUBLIC_DEMO", "").strip().lower() in {"1", "true", "yes"}
+if public_demo:
+    configured_code = os.getenv("DEMO_ACCESS_CODE")
+    if not configured_code:
+        st.error("Demo công khai chưa được cấu hình mã truy cập; ứng dụng đã khóa.")
+        st.stop()
+
+    if not st.session_state.get("public_demo_authorized", False):
+        failed_attempts = st.session_state.get("public_demo_failed_attempts", 0)
+        st.title("🔒 Research Agent — Demo nhóm")
+        if failed_attempts >= 5:
+            st.error("Đã vượt quá số lần nhập mã. Phiên này đã bị khóa.")
+            st.stop()
+
+        with st.form("public_demo_access"):
+            entered_code = st.text_input("Mã truy cập", type="password")
+            submitted = st.form_submit_button("Mở demo")
+
+        if submitted:
+            if is_valid_public_demo_code(entered_code, configured_code):
+                st.session_state.public_demo_authorized = True
+                st.rerun()
+            else:
+                st.session_state.public_demo_failed_attempts = failed_attempts + 1
+                st.error("Mã truy cập không đúng.")
+        st.stop()
+
 st.title("🔎 Research Agent")
 st.caption("Tìm nguồn, tổng hợp thông tin và xem các tool agent sử dụng.")
 
@@ -95,7 +124,7 @@ if user_text:
     except Exception as exc:
         st.session_state.messages.append({
             "role": "assistant",
-            "content": f"Không thể xử lý: {exc}",
+            "content": user_facing_error(exc, public_mode=public_demo),
         })
 
     st.rerun()

@@ -16,6 +16,7 @@ starter/
 
 # Tool scratch output
 arxiv_papers/
+.playwright-mcp/
 
 # OS / editor
 .DS_Store

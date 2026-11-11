@@ -31,13 +31,13 @@ cd starter_v0
 streamlit run app.py
 ```
 
-**Link dùng thử:** Chưa có URL public/deploy để người ngoài nhóm mở. Có thể chạy UI local bằng lệnh dưới đây; khi tạo tunnel/deploy, thay dòng này bằng URL thực tế.
+**Link dùng thử:** [Mở demo Research Agent](https://pursue-powerful-mood-rim.trycloudflare.com). Đây là URL tạm của Cloudflare Quick Tunnel; chỉ hoạt động khi Streamlit và tunnel còn chạy. Mã truy cập được chia sẻ riêng, không lưu trong repo.
 
 Để chạy demo public an toàn bằng Cloudflare Tunnel (không để lộ Telegram token):
 ```bash
 cloudflared tunnel --url http://localhost:8501
 ```
-URL local: `http://localhost:8501` (không phải link public).
+URL local: `http://127.0.0.1:8501`.
 
 ### A2. Tool agent có
 
@@ -129,13 +129,18 @@ Run OpenRouter v3: [JSON](../../starter_v0/runs/v3_B_group_openrouter_20261111T0
 
 ### B4. Live Chat Evidence
 
-Hiện `starter_v0/transcripts/` chỉ có `.gitkeep`, chưa có transcript JSON để chứng minh live chat. Vì vậy ba kịch bản bên dưới là yêu cầu kiểm thử còn phải chạy, không phải lượt chat đã quan sát được:
+Transcript live OpenRouter: [JSON](../../starter_v0/transcripts/v3_openrouter_20261111T100829402839.transcript.json) (4 lượt, `openai/gpt-4o-mini`):
 
-| Required turn | Scenario to capture | Evidence status |
+| Turn | Scenario | Observed result |
 |---|---|---|
-| Turn 1 | Yêu cầu research bình thường | Chưa có transcript |
-| Turn 2 | Yêu cầu thiếu thông tin, sau đó người dùng bổ sung | Chưa có transcript |
-| Turn 3 | Yêu cầu gửi/đăng và agent xin xác nhận trước | Chưa có transcript; public UI hiện loại tool `send` khỏi declarations |
+| 1 | Tìm 3 bài báo mới về LLM reasoning trên arXiv | `papers` trả 3 bài và tóm tắt |
+| 2 | Đọc tweet mới nhất nhưng chưa nêu tác giả | Agent hỏi tên tài khoản |
+| 3 | Bổ sung tài khoản `OpenAI` | Agent gọi `timeline`, nhưng tool trả `RuntimeError`; agent báo không lấy được tweet |
+| 4 | Yêu cầu gửi digest lên Telegram | Agent yêu cầu xác nhận bằng lời; không gọi `send` và không gửi tin thật |
+
+Trong lần chat này, executor `send` được thay bằng stub an toàn để không tạo side effect. Transcript chứng minh lượt tương tác live và hành vi không tự ý gửi; lỗi `timeline` không được tính là lần chạy tool thành công.
+
+Kết quả thử UI public, kiểm tra mã truy cập và giới hạn của transcript được ghi tại [public demo smoke evidence](evidence/public_demo_smoke_2026-11-11.md).
 
 ### B5a. Required Evidence — Tool mới, unit test, UI
 
@@ -143,7 +148,7 @@ Hiện `starter_v0/transcripts/` chỉ có `.gitkeep`, chưa có transcript JSON
 |---|---|---|---|
 | Tool mới (`tools/<tên>/`) | `starter_v0/tools/domain_filter/tool.py`, `TOOL.md`; đăng ký tại `starter_v0/tools/__init__.py` và `starter_v0/artifacts/tools.yaml` | Lọc đúng domain và subdomain hợp lệ; loại bỏ URL giả mạo/lừa đảo; trả error dict an toàn khi sai kiểu input | Không xác minh độ tin cậy hoặc nội dung của trang web |
 | Unit test tool mới (≥ 3 test/tool) | `starter_v0/tests/test_tools_todo.py` — `domain_filter`: 11 passed; `starter_v0/tests/test_tool_contract.py`: 77 passed | Bắt được subdomain lồng nhau, domain bẩn từ LLM, và lỗi input sai kiểu mà không crash agent | Đây là unit/contract tests, chưa chứng minh model tự route đúng tới tool |
-| UI (lệnh chạy + link dùng thử) | `starter_v0/app.py` | Lệnh chạy local: `streamlit run app.py`; giao diện Streamlit hiển thị expander tool events | Chưa có URL public/deploy; UI bỏ credential Telegram khỏi môi trường và không đưa tool `send` vào declarations |
+| UI (lệnh chạy + link dùng thử) | `starter_v0/app.py`; [smoke evidence](evidence/public_demo_smoke_2026-11-11.md) | Lệnh chạy local: `streamlit run app.py`; URL tạm được ghi ở A1; public mode yêu cầu mã truy cập | Quick Tunnel không có uptime guarantee; UI bỏ credential Telegram khỏi môi trường và không đưa tool `send` vào declarations |
 
 Tool unit tests: Đã viết 11 unit tests chuyên biệt cho `domain_filter` trong `starter_v0/tests/test_tools_todo.py` (vượt qua 100%). Ví dụ lỗi mà unit test bắt được nhưng eval không bắt được: trường hợp URL giả mạo tinh vi như `example.com.evil.org` hoặc prefix spoofing `fake-example.com` được unit test chặn đứng tại tầng logic của tool.
 
@@ -159,7 +164,7 @@ Chỉ điền nếu nhóm làm bonus (ghi riêng, tối đa 10 điểm). Tool c�
 
 ### B7. Small Local Model Challenge (bonus)
 
-Các run local dùng Ollama trên GPU, cùng 20 case phase B; `provider_error_cases=0`. Run JSON lưu raw output, metrics và hash artifact. Các run local ghi `tools_hash=1ded0d564101`, tương ứng schema trên `main` trước khi PR này bổ sung `domain_filter` và `rank_sources`; vì vậy chúng là kết quả lịch sử của base suite, chưa đo trên đúng schema tool cuối của PR #1. Run cloud v3 cũng dùng tools hash khác (`cf798cf75dd5`). So sánh cloud/local dưới đây có tính mô tả, chưa phải đối chiếu được kiểm soát hoàn toàn.
+Các run local lịch sử dùng Ollama với schema tool trước PR #1. Hai run mới dùng prompt v5 và schema tool hiện tại (`prompt_hash=665c73f32a34`, `tools_hash=aad6ed05f395`), đều có `provider_error_cases=0`. Mức phân bổ GPU của hai run Ollama mới không được lấy mẫu riêng. OpenRouter preflight ban đầu trả HTTP 401 với key cũ; sau khi cập nhật key, preflight pass và reverse-check v5 đã chạy thành công.
 
 | Version | Model | Prompt | Case accuracy | Routing | Arguments | Multiturn | Run |
 |---|---|---|---:|---:|---:|---:|---|
@@ -168,9 +173,11 @@ Các run local dùng Ollama trên GPU, cùng 20 case phase B; `provider_error_ca
 | v3 local baseline | Ollama `llama3.2:3b` (100% GPU) | v3 | 0.25 | 0.45 | 0.25 | 0.1667 | [run JSON](../../starter_v0/runs/v3-llama3.2-3b_B_base_ollama_20261111T001334521498.json) |
 | v4 local | Ollama `qwen2.5:3b` (100% GPU) | Ordered routing map | 0.65 | 0.75 | 0.65 | 0.6667 | [run JSON](../../starter_v0/runs/v4-local-qwen2.5-3b_B_base_ollama_20261111T005614499549.json) |
 | v5 local | Ollama `qwen2.5:3b` (100% GPU) | Clarify, argument, and boundary examples | 0.65 | 0.65 | 0.65 | 0.3333 | [run JSON](../../starter_v0/runs/v5-local-qwen2.5-3b_B_base_ollama_20261111T005631827068.json) |
-| v5 cloud reverse-check | OpenRouter | v5 local prompt | Chưa chạy | Chưa chạy | Chưa chạy | Chưa chạy | Chưa có run |
+| v5 final-schema base | Ollama `qwen2.5:3b` | v5 prompt + tools hiện tại | 0.60 | 0.60 | 0.60 | 0.3333 | [run JSON](../../starter_v0/runs/v5-final-qwen2.5-3b_B_base_ollama_20261111T102714912533.json) |
+| v5 final-schema group | Ollama `qwen2.5:3b` | v5 prompt + tools hiện tại | 0.20 | 0.70 | 0.20 | 0.00 | [run JSON](../../starter_v0/runs/v5-final-qwen2.5-3b_B_group_ollama_20261111T102852565586.json) |
+| v5 final-schema reverse-check | OpenRouter `openai/gpt-4o-mini` | Cùng v5 prompt + tools hiện tại | 0.95 | 0.95 | 0.95 | 0.8333 | [run JSON](../../starter_v0/runs/v5-final-schema-openrouter_B_base_openrouter_20261111T103351055446.json) |
 
-Sau khi chuyển baseline v3 sang v4, Qwen case accuracy tăng từ 0.35 lên 0.65; routing tăng từ 0.60 lên 0.75. v5 giữ case/argument accuracy ở 0.65 nhưng routing và multiturn thấp hơn v4; kết quả hiện tại không cho thấy v5 tốt hơn tổng thể. Chỉ có một run canonical mỗi prompt hash nên repeatability chưa được đo. Chi tiết setup, baseline, giả thuyết và giới hạn: [local setup](evidence/local_model_setup_2026-11-10.md), [baseline](evidence/local_model_baseline_2026-11-11.md), [prompt iterations](evidence/local_prompt_iterations_2026-11-11.md). Các executor API ngoài không được gọi trong local eval.
+Trên cùng base 20 case và cùng artifact hash, Qwen 2.5 3B đạt 12/20 còn OpenRouter `openai/gpt-4o-mini` đạt 19/20; đây là một run cho mỗi model, không phải kết luận tổng quát hay phép đo lặp. Qwen đạt 2/10 trên group, cho thấy còn yếu khi chọn và điền args cho tool mới, đặc biệt ở đa lượt. Chi tiết setup, giả thuyết và giới hạn: [local setup](evidence/local_model_setup_2026-11-10.md), [baseline](evidence/local_model_baseline_2026-11-11.md), [prompt iterations](evidence/local_prompt_iterations_2026-11-11.md), [run final schema](evidence/local_final_schema_2026-11-11.md). Các executor API ngoài không được gọi trong local eval.
 
 ## 5. Khó khăn và cách xử lý
 
@@ -187,6 +194,9 @@ Sau khi chuyển baseline v3 sang v4, Qwen case accuracy tăng từ 0.35 lên 0.
 ## 6. Tổng hợp đóng góp
 
 Chi tiết đóng góp của thành viên:
+- [Hồ Trọng Nghĩa (2A202603729)](2A202603729_HoTrongNghia.md) — `source_audit`, tích hợp tool và benchmark model local.
+- [Phạm Lê Chuẩn (2A202603784)](2A202603784_PhamLeChuan.md) — `deduplicate_sources`, tối ưu prompt và eval cloud v0–v3.
+- [Nguyễn Minh Quân (2A202603747)](2A202603747_NguyenMinhQuan.md) — `rank_sources`, UI Streamlit và live demo.
 - [Phạm Đăng Quang (2A202603760)](2A202603760_PhamDangQuang.md)
 
 ## 7. Hạn chế và hướng cải thiện — B6. Reflection
