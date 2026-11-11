@@ -29,10 +29,10 @@
 - Kiểm tra setup: import thành công `requests`, `yaml`, `pypdf`, `pytest`, `openai`, `anthropic`, `google.genai`.
 - Tool và schema: `starter_v0/tools/source_audit/`, `starter_v0/tools/__init__.py`, `starter_v0/artifacts/tools.yaml`.
 - Unit test: từ `starter_v0/`, `.venv\Scripts\python.exe -m pytest tests/test_tools_todo.py -k source_audit -q` — 4 passed; `.venv\Scripts\python.exe -m pytest tests/test_tool_contract.py -q` — 60 passed.
-- Ollama preflight GPU ban đầu: `python scripts/preflight_provider.py --provider ollama --model qwen2.5:3b` dừng với lỗi CUDA `device kernel image is invalid`; driver không được thay đổi.
-- Bằng chứng local hiện tại: [setup/preflight](evidence/local_model_setup_2026-11-10.md), [benchmark](evidence/local_model_baseline_2026-11-11.md), [v4/v5 prompt loops](evidence/local_prompt_iterations_2026-11-11.md). B7 ghi đủ bốn run local và các giới hạn so sánh; v5 cloud reverse-check vẫn chưa chạy.
+- Ollama preflight ban đầu gặp lỗi CUDA `device kernel image is invalid`; sau khi driver được cập nhật, preflight `qwen2.5:3b` đã pass ngày 2026-11-11.
+- Bằng chứng local/cloud: [setup/preflight](evidence/local_model_setup_2026-11-10.md), [benchmark](evidence/local_model_baseline_2026-11-11.md), [v4/v5 prompt loops](evidence/local_prompt_iterations_2026-11-11.md), [final-schema runs](evidence/local_final_schema_2026-11-11.md). Hai run Qwen v5 trên schema tool hiện tại: [base 12/20](../../starter_v0/runs/v5-final-qwen2.5-3b_B_base_ollama_20261111T102714912533.json) và [group 2/10](../../starter_v0/runs/v5-final-qwen2.5-3b_B_group_ollama_20261111T102852565586.json). Sau khi cập nhật key, OpenRouter preflight pass; reverse-check cùng prompt/schema đạt [19/20](../../starter_v0/runs/v5-final-schema-openrouter_B_base_openrouter_20261111T103351055446.json). Cả ba run có 0 provider error; mức GPU allocation của hai run Ollama mới không được lấy mẫu riêng.
 - AI/công cụ: Codex hỗ trợ setup và code; tự kiểm tra bằng import, targeted pytest và contract test.
 
 ## 5. Tự đánh giá
 
-Tool `source_audit` và unit test đã hoàn tất; full suite hiện có 109 passed, 14 skipped, 0 failed. Hai model local, benchmark và hai vòng tối ưu đã có bằng chứng. Việc còn lại cho bonus local là chạy v5 cloud reverse-check nếu muốn đối chiếu cùng prompt; các run local hiện dùng schema tool cũ.
+Tool `source_audit` và unit test đã hoàn tất và được merge qua PR #4. Full suite gần nhất: 114 passed, 14 starter stubs skipped, 0 failed. Bonus local có benchmark hai model và hai vòng prompt; Qwen v5 đã được đo lại trên schema tool hiện tại, và reverse-check OpenRouter cùng prompt đạt 19/20. Run local chỉ được ghi là Ollama; mức GPU của hai run final-schema không được lấy mẫu riêng.

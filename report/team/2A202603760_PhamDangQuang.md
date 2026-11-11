@@ -69,9 +69,9 @@
   - Chạy `pytest tests/test_tool_contract.py -v`: **77/77 passed** (bao gồm test bảo vệ thứ tự `items` và kiểm tra hợp đồng 4 tools).
   - Kiểm tra nạp và tự đối chiếu dataset: Chạy `run_eval.load_cases(Path('data/eval_group.json'), 'B')` và `compare_subset` thành công 10/10 case không lỗi schema hay kiểu dữ liệu.
 
-### 4.3. Bằng chứng chạy Eval nhóm *(Điền sau khi chạy eval cloud)*
-- **File run kết quả:** `starter_v0/runs/[DIEN_SAU_KHI_CHAY_EVAL]`
-- **Tóm tắt độ chính xác nhóm:** `[DIEN_SAU_KHI_CHAY_EVAL]`
+### 4.3. Bằng chứng chạy Eval nhóm
+- **File run kết quả:** [`starter_v0/runs/v3_B_group_openrouter_20261111T091923906618.json`](../../starter_v0/runs/v3_B_group_openrouter_20261111T091923906618.json)
+- **Tóm tắt:** 7/10 case đạt; case accuracy 0.70, routing 0.80, arguments 0.70, multiturn 0.60; 0 provider error.
 
 ---
 

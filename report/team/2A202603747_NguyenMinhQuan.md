@@ -40,8 +40,8 @@
 - Unit test hiện tại: `starter_v0/tests/test_tools_todo.py` (22 passed, 14 starter stubs skipped khi chạy riêng file).
 - Công cụ hỗ trợ: Trợ lý AI hỗ trợ dựng khung giao diện Streamlit; tự kiểm tra bằng cách chạy thử `streamlit run app.py` và chạy pytest offline.
 
-**Lưu ý về bằng chứng live chat:** `starter_v0/transcripts/` hiện chỉ có `.gitkeep`; báo cáo này không xác nhận đã nộp transcript 3 lượt. Phần transcript và link UI public vẫn cần bổ sung nếu nhóm hoàn thành CP5.
+**Bằng chứng live chat/UI:** transcript OpenRouter 4 lượt được lưu tại [`starter_v0/transcripts/v3_openrouter_20261111T100829402839.transcript.json`](../../starter_v0/transcripts/v3_openrouter_20261111T100829402839.transcript.json); kết quả public UI smoke và giới hạn lượt chat ghi tại [evidence](evidence/public_demo_smoke_2026-11-11.md). Cloudflare Quick Tunnel hiện là URL tạm; smoke test đã chạy qua link nhưng chưa có xác nhận độc lập từ người ngoài nhóm.
 
 ## 5. Tự đánh giá
 
-Tool `rank_sources` và UI Streamlit đã được tích hợp qua PR #2. Full suite hiện đạt 109 passed, 14 starter stubs skipped, 0 failed; bonus test challenge yêu cầu 0 skipped chưa hoàn thành.
+Tool `rank_sources` và UI Streamlit đã được tích hợp qua PR #2. Public demo được bảo vệ bằng mã truy cập; `send` bị loại khỏi declarations và credential Telegram bị gỡ khỏi môi trường demo. Full suite gần nhất đạt 114 passed, 14 starter stubs skipped, 0 failed; bonus test challenge yêu cầu 0 skipped chưa hoàn thành.

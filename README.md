@@ -61,42 +61,42 @@ Tool có sẵn (`send`, `policy`, `papers`, `paper_text`) không tự được b
 Đánh dấu khi xong. Mỗi dòng trỏ tới file cần sửa và bằng chứng cần nộp.
 
 **Setup (CP1)**
-- [ ] `TEAM.md` có tên nhóm và thành viên
-- [ ] `.env` có provider key + `TAVILY_API_KEY`, `FIRECRAWL_API_KEY`, `RAPIDAPI_KEY`
-- [ ] `python scripts/preflight_provider.py --provider openrouter` pass
-- [ ] `pytest` chạy được: contract test + example test xanh, TODO test đang `skipped`
+- [x] `TEAM.md` có tên nhóm và thành viên
+- [ ] `.env` có provider key + `TAVILY_API_KEY`, `FIRECRAWL_API_KEY`, `RAPIDAPI_KEY` (chưa xác minh đủ tên key; không đưa giá trị bí mật vào repo)
+- [x] `python scripts/preflight_provider.py --provider openrouter` pass
+- [x] `pytest` chạy được: contract test + example test xanh, TODO test đang `skipped`
 
 **Prompt & tool declaration (CP1, CP2)**
-- [ ] Chạy baseline `v0`, ghi vào `artifacts/version_log.csv`
-- [ ] Liệt kê các case FAIL của `v0` và gán mỗi case một loại lỗi (`wrong_tool`, `wrong_arg_value`, `missing_info`, v.v.)
-- [ ] `artifacts/system_prompt.md`: bỏ các chỉ dẫn xấu cố ý của starter (đoán thay vì hỏi, gửi không cần xác nhận, ép một bước)
-- [ ] `artifacts/system_prompt.md`: thêm rule routing (khi nào `timeline` / `social_search` / `lookup` / `fetch` / `clarify`)
-- [ ] `artifacts/tools.yaml`: viết lại `description` mỗi tool: làm gì, **khi nào dùng / khi nào không dùng**
-- [ ] `artifacts/tools.yaml`: mô tả rõ convention args (handle không có `@`, `topic=news` cho tin tức, `timeframe`, `search_type=Top|Latest`)
-- [ ] `artifacts/tools.yaml`: `send` mô tả rõ chỉ gửi khi user đã xác nhận (`confirmed=true`)
-- [ ] `v1`, `v2`, `v3`: mỗi version **một** giả thuyết, metric trước/sau trong `version_log.csv`
+- [x] Chạy baseline `v0`, ghi vào `artifacts/version_log.csv`
+- [x] Liệt kê các case FAIL của `v0` và gán mỗi case một loại lỗi (`wrong_tool`, `wrong_arg_value`, `missing_info`, v.v.)
+- [x] `artifacts/system_prompt.md`: bỏ các chỉ dẫn xấu cố ý của starter (đoán thay vì hỏi, gửi không cần xác nhận, ép một bước)
+- [x] `artifacts/system_prompt.md`: thêm rule routing (khi nào `timeline` / `social_search` / `lookup` / `fetch` / `clarify`)
+- [x] `artifacts/tools.yaml`: viết lại `description` mỗi tool: làm gì, **khi nào dùng / khi nào không dùng**
+- [x] `artifacts/tools.yaml`: mô tả rõ convention args (handle không có `@`, `topic=news` cho tin tức, `timeframe`, `search_type=Top|Latest`)
+- [x] `artifacts/tools.yaml`: `send` mô tả rõ chỉ gửi khi user đã xác nhận (`confirmed=true`)
+- [x] `v1`, `v2`, `v3`: mỗi version **một** giả thuyết, metric trước/sau trong `version_log.csv`
 
 **Tool mới (CP3)**
-- [ ] `tools/<tên>/tool.py` + `TOOL.md` (frontmatter đúng contract trong `tools/README.md`)
-- [ ] Đăng ký trong `tools/__init__.py` (`TOOL_FUNCTIONS`) và `artifacts/tools.yaml`
-- [ ] Unit test cho tool mới trong `tests/test_tools_todo.py` (≥ 3 test)
-- [ ] Ít nhất 1 eval case trong `data/eval_group.json` kiểm tra model có route tới tool mới đúng lúc
+- [x] `tools/<tên>/tool.py` + `TOOL.md` (frontmatter đúng contract trong `tools/README.md`)
+- [x] Đăng ký trong `tools/__init__.py` (`TOOL_FUNCTIONS`) và `artifacts/tools.yaml`
+- [x] Unit test cho tool mới trong `tests/test_tools_todo.py` (≥ 3 test)
+- [x] Ít nhất 1 eval case trong `data/eval_group.json` kiểm tra model có route tới tool mới đúng lúc
 
 **Testing (CP3, CP4)**
-- [ ] `data/eval_group.json`: case cho model (routing / args / boundary), xem Step 4
-- [ ] `tests/test_tools_todo.py`: unit test cho code của tool, xem Step 4b
-- [ ] `pytest`: 0 failed; 3 test của tool mới không còn `skipped` (stub của tool có sẵn được phép còn skip)
+- [x] `data/eval_group.json`: case cho model (routing / args / boundary), xem Step 4
+- [x] `tests/test_tools_todo.py`: unit test cho code của tool, xem Step 4b
+- [x] `pytest`: 0 failed; 3 test của tool mới không còn `skipped` (stub của tool có sẵn được phép còn skip)
 
 **Demo & báo cáo (CP5)**
-- [ ] UI chạy được + link dùng thử
-- [ ] `chat.py`: ≥ 3 lượt live, có transcript
-- [ ] `report/team/group_report.md` Phần A trước 16:30, Phần B trước khi nộp
-- [ ] Mỗi thành viên có `report/team/MSSV_HoTen.md`
+- [x] UI chạy được + link dùng thử
+- [x] `chat.py`: ≥ 3 lượt live, có transcript
+- [x] `report/team/group_report.md` Phần A trước 16:30, Phần B trước khi nộp
+- [x] Mỗi thành viên có `report/team/MSSV_HoTen.md`
 
 **Bonus (tuỳ chọn)**
 - [ ] `send` gửi thật lên Telegram sau khi user xác nhận, có transcript chứng minh
-- [ ] Small Local Model Challenge (Step 7)
-- [ ] Hơn 3 tool mới (≥ 4), mỗi tool ≥ 3 test
+- [x] Small Local Model Challenge (Step 7)
+- [x] Hơn 3 tool mới (≥ 4), mỗi tool ≥ 3 test
 - [ ] Test challenge: `pytest` 0 failed, 0 skipped toàn suite
 
 ## Cấu trúc thư mục
@@ -357,10 +357,19 @@ Thử ít nhất 3 lượt live, ví dụ:
 
 Để team cùng zone tự thử agent trong Team showdown, expose UI đang chạy local ra một link public. Cách nhanh nhất, không cần đăng ký domain hay deploy lên cloud, là **Cloudflare Tunnel** (`cloudflared`).
 
+Trước khi mở link public, bật chế độ demo có mã truy cập trong PowerShell (không ghi mã vào Git):
+
+```powershell
+$env:PUBLIC_DEMO = '1'
+$env:DEMO_ACCESS_CODE = '<random-long-code-shared-separately-with-reviewers>'
+```
+
+Chế độ public sẽ khóa app nếu thiếu mã, giới hạn 5 lần nhập sai cho mỗi phiên và vẫn ẩn credential Telegram/không đưa tool `send` vào UI. Khi chạy local thông thường, không đặt `PUBLIC_DEMO`.
+
 1. Chạy UI local trước (ví dụ Streamlit mặc định cổng `8501`):
 
    ```bash
-   streamlit run app.py            # → http://localhost:8501
+   streamlit run app.py --server.address 127.0.0.1  # → http://localhost:8501
    ```
 
 2. Cài `cloudflared`:
@@ -376,12 +385,12 @@ Thử ít nhất 3 lượt live, ví dụ:
 3. Mở tunnel trỏ vào cổng UI — lệnh trả về ngay một URL `https://<random>.trycloudflare.com`:
 
    ```bash
-   cloudflared tunnel --url http://localhost:8501
+   cloudflared tunnel --url http://127.0.0.1:8501
    ```
 
 4. Copy URL đó, dán vào mục A1 ("Link dùng thử") của `report/team/group_report.md` để team khác mở thử.
 
-Lưu ý: link `trycloudflare.com` là tạm thời, sống theo phiên `cloudflared` (tắt lệnh là mất). Giữ lệnh chạy trong suốt buổi showdown. Nếu team deploy hẳn lên Vercel/Streamlit Cloud thì dùng link đó thay cho tunnel.
+Lưu ý: link `trycloudflare.com` là tạm thời, sống theo phiên `cloudflared` (tắt lệnh là mất) và không có cam kết uptime. Giữ lệnh chạy trong suốt buổi showdown. Nếu cần URL cố định, có thể deploy lên Streamlit Community Cloud; nền tảng này cấp subdomain `streamlit.app` sau khi đăng nhập và kết nối repo GitHub.
 
 ## Step 6 — Báo cáo + poster
 
