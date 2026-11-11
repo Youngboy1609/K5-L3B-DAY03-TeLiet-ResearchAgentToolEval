@@ -193,7 +193,7 @@ Sau khi chuyển baseline v3 sang v4, Qwen case accuracy tăng từ 0.35 lên 0.
 ## 6. Tổng hợp đóng góp
 
 Chi tiết đóng góp của thành viên:
-- [Phạm Đăng Quang (2A202603760)](2A202603760_PhamDangQuang.md)
+- [Phạm Đăng Quang (2A202603760)](2A202603760_PhamDangQuang.md) - `domain_filter`, 10 eval case nhóm và unit tests.
 
 ## 7. Hạn chế và hướng cải thiện — B6. Reflection
 
