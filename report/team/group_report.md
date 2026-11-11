@@ -164,7 +164,7 @@ Chỉ điền nếu nhóm làm bonus (ghi riêng, tối đa 10 điểm). Tool c�
 
 ### B7. Small Local Model Challenge (bonus)
 
-Các run local lịch sử dùng Ollama với schema tool trước PR #1. Hai run mới dùng prompt v5 và schema tool hiện tại (`prompt_hash=665c73f32a34`, `tools_hash=aad6ed05f395`), đều có `provider_error_cases=0`. Mức phân bổ GPU của hai run Ollama mới không được lấy mẫu riêng. OpenRouter preflight ban đầu trả HTTP 401 với key cũ; sau khi cập nhật key, preflight pass và reverse-check v5 đã chạy thành công.
+Các run local lịch sử dùng Ollama với schema tool trước PR #1. Các run final-schema dùng prompt v5 và schema tool hiện tại (`prompt_hash=665c73f32a34`, `tools_hash=aad6ed05f395`), đều có `provider_error_cases=0`. Trong lần chạy base final-schema mới nhất, `ollama ps` ghi model `qwen2.5:3b` ở `100% GPU` ngay trong lúc eval; log snapshot và nvidia-smi được lưu trong [evidence final-schema](evidence/local_final_schema_2026-11-11.md). Run group final-schema trước đó không được lấy mẫu GPU riêng. OpenRouter preflight ban đầu trả HTTP 401 với key cũ; sau khi cập nhật key, preflight pass và reverse-check v5 đã chạy thành công.
 
 | Version | Model | Prompt | Case accuracy | Routing | Arguments | Multiturn | Run |
 |---|---|---|---:|---:|---:|---:|---|
@@ -175,9 +175,10 @@ Các run local lịch sử dùng Ollama với schema tool trước PR #1. Hai ru
 | v5 local | Ollama `qwen2.5:3b` (100% GPU) | Clarify, argument, and boundary examples | 0.65 | 0.65 | 0.65 | 0.3333 | [run JSON](../../starter_v0/runs/v5-local-qwen2.5-3b_B_base_ollama_20261111T005631827068.json) |
 | v5 final-schema base | Ollama `qwen2.5:3b` | v5 prompt + tools hiện tại | 0.60 | 0.60 | 0.60 | 0.3333 | [run JSON](../../starter_v0/runs/v5-final-qwen2.5-3b_B_base_ollama_20261111T102714912533.json) |
 | v5 final-schema group | Ollama `qwen2.5:3b` | v5 prompt + tools hiện tại | 0.20 | 0.70 | 0.20 | 0.00 | [run JSON](../../starter_v0/runs/v5-final-qwen2.5-3b_B_group_ollama_20261111T102852565586.json) |
+| v5 final-schema base, GPU allocation sampled | Ollama `qwen2.5:3b` (100% GPU) | v5 prompt + tools hiện tại | 0.60 | 0.60 | 0.60 | 0.3333 | [run JSON](../../starter_v0/runs/v5-gpu-final-schema-qwen2.5-3b_B_base_ollama_20261111T105120046714.json) |
 | v5 final-schema reverse-check | OpenRouter `openai/gpt-4o-mini` | Cùng v5 prompt + tools hiện tại | 0.95 | 0.95 | 0.95 | 0.8333 | [run JSON](../../starter_v0/runs/v5-final-schema-openrouter_B_base_openrouter_20261111T103351055446.json) |
 
-Trên cùng base 20 case và cùng artifact hash, Qwen 2.5 3B đạt 12/20 còn OpenRouter `openai/gpt-4o-mini` đạt 19/20; đây là một run cho mỗi model, không phải kết luận tổng quát hay phép đo lặp. Qwen đạt 2/10 trên group, cho thấy còn yếu khi chọn và điền args cho tool mới, đặc biệt ở đa lượt. Chi tiết setup, giả thuyết và giới hạn: [local setup](evidence/local_model_setup_2026-11-10.md), [baseline](evidence/local_model_baseline_2026-11-11.md), [prompt iterations](evidence/local_prompt_iterations_2026-11-11.md), [run final schema](evidence/local_final_schema_2026-11-11.md). Các executor API ngoài không được gọi trong local eval.
+Trên cùng base 20 case và cùng artifact hash, Qwen 2.5 3B đạt 12/20 (lặp lại một lần, có `ollama ps` xác nhận 100% GPU) còn OpenRouter `openai/gpt-4o-mini` đạt 19/20; đây là các lần đo đơn, không phải kết luận tổng quát hay phép đo lặp. Qwen đạt 2/10 trên group, cho thấy còn yếu khi chọn và điền args cho tool mới, đặc biệt ở đa lượt. Chi tiết setup, giả thuyết và giới hạn: [local setup](evidence/local_model_setup_2026-11-10.md), [baseline](evidence/local_model_baseline_2026-11-11.md), [prompt iterations](evidence/local_prompt_iterations_2026-11-11.md), [run final schema](evidence/local_final_schema_2026-11-11.md). Các executor API ngoài không được gọi trong local eval.
 
 ## 5. Khó khăn và cách xử lý
 
@@ -185,8 +186,8 @@ Trên cùng base 20 case và cùng artifact hash, Qwen 2.5 3B đạt 12/20 còn 
    - Trong quá trình đánh giá các phiên bản v3 trên Gemini cloud (`gemini-2.5-flash-lite`), nhóm nhiều lần gặp lỗi `ServerError: 503 UNAVAILABLE` hoặc giới hạn rate limit khiến run bị gián đoạn.
    - *Cách xử lý:* Ghi nhận trung thực các run gặp lỗi nhà cung cấp (`185620920233`, `200311115832`), thực hiện cơ chế chờ và retry để thu được bản run v3 sạch 100% (`v3_B_base_gemini_20261110T215643805698.json`) với `provider_error_cases = 0`.
 2. **Khó khăn về Môi trường Local CUDA:**
-   - Khi chạy preflight trên GPU với Ollama model `qwen2.5:3b`, gặp lỗi CUDA driver (`device kernel image is invalid`).
-   - *Cách xử lý:* Nhóm trưởng đã cấu hình alias `qwen2.5:3b-cpu` ép chạy trên CPU (`num_gpu=0`), xác nhận preflight thành công trên 100% CPU mà không cần can thiệp driver hệ thống.
+   - Lần preflight đầu với Ollama `qwen2.5:3b` gặp lỗi CUDA (`device kernel image is invalid`).
+   - *Cách xử lý:* Sau khi cập nhật NVIDIA driver, preflight Ollama pass. Run v5 final-schema mới được `ollama ps` xác nhận phân bổ `100% GPU`; run CPU dùng alias riêng và được ghi ở evidence local trước đó.
 3. **Vấn đề so khớp thứ tự danh sách trong Evaluator:**
    - Hàm `normalize_value` mặc định sắp xếp mọi list, khiến các danh sách yêu cầu tính thứ tự nghiêm ngặt (như danh sách `items` trong `deduplicate_sources` hay `rank_sources`) bị so sánh như tập hợp không thứ tự.
    - *Cách xử lý:* Nâng cấp hàm `compare_subset` và `normalize_value` trong `run_eval.py`: giữ nguyên thứ tự tuần tự đối với key `"items"`, chỉ sắp xếp các trường tập hợp (như `allowed_domains`), đồng thời bổ sung 2 contract test xác minh.
